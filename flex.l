@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-    /* Definimos tokens para el parser (Bison/Yacc) */
-#include "parserbison.tab.h"
 %}
 
 %option noyywrap noinput nounput
@@ -15,12 +13,12 @@ ID          [a-zA-Z][a-zA-Z0-9_]*
 DIGIT      [0-9]
 INTEGER_LITERAL [0-9]+
 REL_OP [<>==]
-ARIT_OP [+-*/%]
+ARIT_OP [-+*/%]
 COND_OP [&&||]
 
     /* ======== PATRONES Y |ACCIONES ========== */
 %%|
-"program"              {   return PROGRAM;    }
+"Program"              {   return PROGRAM;    }
 "extern"              {   return EXTERN;    }
 "integer"               {   return T_INT;    }
 "bool"              {   return T_BOOL;    }
@@ -50,7 +48,6 @@ COND_OP [&&||]
 {COND_OP}         {   return CONDITION_OP;    }
 {REL_OP}          {   return RELATION_OP;      }
 {ARIT_OP}         {   return ARITMETIC_OP;     }
-
 
     /* Ignorar espacios y tabs */
 [ \t\r]+            { /* ignorar */ }
