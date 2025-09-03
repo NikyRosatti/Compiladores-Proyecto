@@ -17,11 +17,21 @@ INTEGER_LITERAL [0-9]+
 REL_OP [<>==]
 ARIT_OP [+-*/%]
 COND_OP [&&||]
-BOOL_LITERAL [TRUE, FLASE]
 
     /* ======== PATRONES Y |ACCIONES ========== */
 %%|
-"main"              {   return MAIN;    }
+"program"              {   return PROGRAM;    }
+"extern"              {   return EXTERN;    }
+"integer"               {   return T_INT;    }
+"bool"              {   return T_BOOL;    }
+"void"              {   return T_VOID;    }
+"return"            {   return RETURN;    }
+"if"                {   return IF;    }
+"then"              {   return THEN;    }
+"else"              {   return ELSE;    }
+"while"             {   return WHILE;    }
+"true"              {   return TRUE;    }
+"false"             {   return FALSE;    }
     
     /* Números */
 {DIGIT}            {
@@ -32,9 +42,6 @@ BOOL_LITERAL [TRUE, FLASE]
 {ID}                {
                     yylval.id = strdup(yytext);
                     return ID; }
-{BOOL_LITERAL}      {   
-                    yylval.id = strdup(yytext);
-                    return BOOL;   }
 
     /* Operadores de un solo carácter y delimitadores */
 [;(){},]         {   return *yytext;    }
