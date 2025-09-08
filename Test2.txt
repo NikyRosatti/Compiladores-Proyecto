@@ -1,0 +1,4 @@
+Program {
+   y = 5 ;
+  integer x = 5;
+}

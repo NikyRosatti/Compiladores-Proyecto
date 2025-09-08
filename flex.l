@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "bison.tab.h"
 %}
 
 %option noyywrap noinput nounput
@@ -12,15 +13,13 @@ ALPHA       [a-zA-Z]
 ID          [a-zA-Z][a-zA-Z0-9_]*
 DIGIT      [0-9]
 INTEGER_LITERAL [0-9]+
-REL_OP [<>==]
-ARIT_OP [-+*/%]
-COND_OP [&&||]
+NUMERO      0|[1-9][0-9]*
 
     /* ======== PATRONES Y |ACCIONES ========== */
 %%|
-"Program"              {   return PROGRAM;    }
+"Program"              {   printf("PROGRAM\n"); return PROGRAM;    }
 "extern"              {   return EXTERN;    }
-"integer"               {   return T_INT;    }
+"integer"               {   printf("T_INT\n"); return T_INT;    }
 "bool"              {   return T_BOOL;    }
 "void"              {   return T_VOID;    }
 "return"            {   return RETURN;    }
@@ -32,22 +31,27 @@ COND_OP [&&||]
 "false"             {   return FALSE;    }
     
     /* Números */
-{DIGIT}            {
+{NUMERO}            {
                     yylval.num = atoi(yytext);
+                    printf("INT\n");
                     return INT; }
 
     /* Identificadores */
 {ID}                {
                     yylval.id = strdup(yytext);
+                    printf("ID\n");
                     return ID; }
 
     /* Operadores de un solo carácter y delimitadores */
-[;(){},]         {   return *yytext;    }
+[-+*;(){}=!,/<>%]         {  printf("SIMBOLO\n"); return *yytext;    }
 
     /* Operadores de dos caracteres */
-{COND_OP}         {   return CONDITION_OP;    }
-{REL_OP}          {   return RELATION_OP;      }
-{ARIT_OP}         {   return ARITMETIC_OP;     }
+"||"          {   return OR;    }
+"&&"          {   return AND;   }
+"=="          {   return EQ;    }
+"!="          {   return NEQ;   }
+"<="          {   return LE;   }
+">="          {   return GE;   }
 
     /* Ignorar espacios y tabs */
 [ \t\r]+            { /* ignorar */ }

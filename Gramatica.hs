@@ -36,7 +36,7 @@
             | ;
 
 --Llamadas a métodos
-⟨method call⟩ → ⟨id⟩ ( ⟨args⟩ )
+⟨method_call⟩ → ⟨id⟩ ( ⟨args⟩ )
 
 ⟨args⟩ → ⟨expr⟩ , ⟨args⟩ | ⟨expr⟩ | ε
 
@@ -50,24 +50,24 @@
         | ( ⟨expr⟩ )
 
 --Operadores
-⟨bin op⟩ → ⟨arith op⟩ | ⟨rel op⟩ | ⟨cond op⟩
+⟨bin_op⟩ → ⟨arith_op⟩ | ⟨rel_op⟩ | ⟨cond_op⟩
 
-⟨arith op⟩ → + | - | * | / | %
+⟨arith_op⟩ → + | - | * | / | %
 
-⟨rel op⟩ → < | > | ==
+⟨rel_op⟩ → < | > | ==
 
-⟨cond op⟩ → && | ||
+⟨cond_op⟩ → && | ||
 
 --Identificadores y literales
 ⟨literal⟩ → ⟨integer_literal⟩ | ⟨bool_literal⟩
 
-⟨id⟩ → ⟨alpha⟩ ⟨id_body⟩
+#⟨id⟩ → ⟨alpha⟩ ⟨id_body⟩
 
-⟨id_body⟩ → ⟨alpha_num⟩ ⟨id_body⟩ | ε
+#⟨id_body⟩ → ⟨alpha_num⟩ ⟨id_body⟩ | ε
 
-⟨alpha_num⟩ → ⟨alpha⟩ | ⟨digit⟩ | _
+#⟨alpha_num⟩ → ⟨alpha⟩ | ⟨digit⟩ | _
 
-⟨alpha⟩ → a | b | ... | z | A | B | ... | Z
+#⟨alpha⟩ → a | b | ... | z | A | B | ... | Z
 
 ⟨digit⟩ → 0 | 1 | 2 | ... | 9
 
