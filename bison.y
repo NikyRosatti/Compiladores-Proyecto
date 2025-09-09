@@ -28,10 +28,10 @@ void yyerror(const char *s) {
 
 %left OR
 %left AND
-%left EQ NEQ '<' '>' LE GE
+%nonassoc EQ NEQ '<' '>' LE GE
 %left '+' '-'
-%left '*' '/'
-%right '!'
+%left '*' '/' '%'
+%right UMINUS '!'   /* operadores unarios */
 
 
 %%
@@ -43,7 +43,9 @@ code : var_decl code
      | /* vacío */ { }
      ;
 
-var_decl : all_types ID '=' expr ';' 
+var_decl : all_types ID '=' expr ';'
+        | all_types ID ';'
+        | ID '=' expr ';'
         ;
 
 
@@ -98,7 +100,7 @@ expr : ID
      | TRUE
      | FALSE
      | expr bin_op expr
-     |  '-' expr 
+     | '-' expr %prec UMINUS
      | '!' expr
      | '(' expr ')'
      ;
