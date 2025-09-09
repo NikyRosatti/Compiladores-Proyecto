@@ -11,9 +11,7 @@
     /* ======== EXPRESIONES REGULARES ======== */
 ALPHA       [a-zA-Z]
 ID          [a-zA-Z][a-zA-Z0-9_]*
-DIGIT      [0-9]
-INTEGER_LITERAL [0-9]+
-NUMERO      0|[1-9][0-9]*
+NUMERO [0-9]+
 
     /* ======== PATRONES Y |ACCIONES ========== */
 %%|
@@ -27,8 +25,8 @@ NUMERO      0|[1-9][0-9]*
 "then"              {   return THEN;    }
 "else"              {   return ELSE;    }
 "while"             {   return WHILE;    }
-"true"              {   return TRUE;    }
-"false"             {   return FALSE;    }
+"true"              { yylval.num = 1; return TRUE; }
+"false"             { yylval.num = 0; return FALSE; }
     
     /* Números */
 {NUMERO}            {

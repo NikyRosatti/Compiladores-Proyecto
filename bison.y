@@ -38,12 +38,12 @@ void yyerror(const char *s) {
 program : PROGRAM '{' code '}'  { printf("Programa válido ✔️\n"); }
         ;
 
-code : var_decl code { printf("ENTREEEE \n"); }
+code : var_decl code
      | method_decl code
      | /* vacío */ { }
      ;
 
-var_decl : tipo  ID '=' expr ';' 
+var_decl : all_types ID '=' expr ';' 
         ;
 
 
@@ -51,16 +51,16 @@ method_decl : all_types ID '(' params ')' block
             | all_types ID '(' params ')' EXTERN ';' {}
             ; 
 
+
+params : all_types ID ',' params 
+        | all_types ID 
+        | /* vacío */ { }
+        ;
+
 all_types : T_INT
           | T_BOOL
           | T_VOID
           ;
-
-params : tipo ID ',' params 
-        | tipo ID 
-        | /* vacío */ { }
-        ;
-
 
 block : '{' block_decl block_statement '}' 
       ;
@@ -72,10 +72,6 @@ block_decl : var_decl block_decl
 block_statement : statement block_statement
                 | /* vacío */ { }
                 ;
-
-tipo : T_INT
-     | T_BOOL
-        ;
     
     /*sentencias*/
 statement : ID '=' expr ';'
