@@ -81,6 +81,7 @@ statement : ID '=' expr ';'
             | IF '(' expr ')' THEN block ELSE block
             | WHILE expr block
             | RETURN ';'
+            | RETURN expr ';'
             | block
             | ';'
             ;
@@ -98,38 +99,23 @@ expr : ID
      | INT
      | TRUE
      | FALSE
-     | expr bin_op expr
+     | expr '+' expr
+     | expr '-' expr
+     | expr '*' expr
+     | expr '/' expr
+     | expr '%' expr
+     | expr EQ expr
+     | expr NEQ expr
+     | expr '<' expr
+     | expr '>' expr
+     | expr LE expr
+     | expr GE expr
+     | expr AND expr
+     | expr OR expr
      | '-' expr %prec UMINUS
      | '!' expr
      | '(' expr ')'
      ;
-
-
-    /*Operadores*/
-bin_op : arith_op 
-        | rel_op 
-        | cond_op
-        ;
-
-arith_op : '+' 
-        | '-' 
-        | '*' 
-        | '/' 
-        | '%'
-        ;
-
-
-rel_op : '<' 
-       | '>' 
-       | EQ
-       | NEQ
-       | LE
-       | GE
-       ;
-
-cond_op : AND
-        | OR
-        ;
 
 
 %%
