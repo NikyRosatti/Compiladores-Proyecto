@@ -45,7 +45,6 @@ code : var_decl code
 
 var_decl : all_types ID '=' expr ';'
         | all_types ID ';'
-        | ID '=' expr ';'
         ;
 
 

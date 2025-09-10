@@ -5,7 +5,7 @@
 ⟨code⟩ → ⟨var decl⟩ code | ⟨method decl⟩ code | ε 
 
 --Declaraciones de variables 
-⟨var_decl⟩ → ⟨type⟩ ⟨id⟩ = ⟨expr⟩ ;
+⟨var_decl⟩ → ⟨type⟩ ⟨id⟩ = ⟨expr⟩ ; | ⟨type⟩ ⟨id⟩ ;
 
 --Declaraciones de métodos
 ⟨method_decl⟩ → ⟨all_types⟩ ⟨id⟩ ( ⟨params⟩ ) ⟨block⟩
