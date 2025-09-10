@@ -40,6 +40,7 @@ program : PROGRAM '{' code '}'  { printf("Programa válido ✔️\n"); }
 
 code : var_decl code
      | method_decl code
+     | statement code
      | /* vacío */ { }
      ;
 
