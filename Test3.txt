@@ -1,0 +1,14 @@
+Program
+  {
+    void print_int(integer i) extern ;
+
+    void main()
+    {
+      integer y = 0;
+      y = get_int();
+      while (5>4) {
+        y = y + 1;
+      }
+      print_int(y);
+  }
+}
