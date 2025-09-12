@@ -1,21 +1,19 @@
-# Makefile estético para act1 (Bison + Flex + GCC)
+# Makefile Temporal (Bison + Flex + GCC)
 
 # Variables
-BISON=parserbison.y
+BISON=bison.y
 FLEX=flex.l
 CC=gcc
-TARGET=act1
-OBJS=parserbison.tab.c lex.yy.c Tree.c SymbolTable.c Stack.c CodeGen.c
+TARGET=parser
+OBJS=bison.tab.c lex.yy.c
 FLFLAGS=-lfl
 #CFLAGS=-Wall -DMODO=$(MODO)
 
 # Carpetas de resultados
-RESULT_DIRS=resultados/valid resultados/syntax resultados/semantics
+RESULT_DIRS=resultados
 
 # Tests
-VALID_TESTS=$(wildcard test/valid/test*.txt)
-SYNTAX_TESTS=$(wildcard test/syntax/test_err*.txt)
-SEMANTIC_TESTS=$(wildcard test/semantics/test*.txt)
+TESTS=$(wildcard test/Test*.txt)
 
 # Colores
 GREEN=\033[0;32m
@@ -57,9 +55,7 @@ endef
 
 # === Ejecutar todos los tests ===
 run_tests: compile
-	$(call run_test_loop,valid,VALID_TESTS,0)
-	$(call run_test_loop,syntax,SYNTAX_TESTS,1)
-	$(call run_test_loop,semantics,SEMANTIC_TESTS,2)
+	$(call run_test_loop,correct,TESTS,0)
 
 # === Limpiar binarios y resultados ===
 clean:
