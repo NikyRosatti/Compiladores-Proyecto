@@ -1,3 +1,25 @@
+/* =========================================================================
+ * Descripción:
+ *   Este archivo contiene la gramática del compilador. Implementa el análisis sintáctico, verificando
+ *   que el código fuente cumpla con las reglas definidas en la especificación.
+ *
+ * Funcionalidad:
+ *   - Define la unión de tipos semánticos (números, identificadores, etc.).
+ *   - Declara los tokens del lenguaje (palabras reservadas, operadores, literales).
+ *   - Establece la precedencia y asociatividad de operadores.
+ *   - Implementa la gramática para:
+ *       * Programa principal
+ *       * Declaraciones de variables y métodos
+ *       * Bloques, sentencias y expresiones
+ *       * Llamadas a métodos
+ *
+ * Mensajes de error:
+ *   Si se detecta un error sintáctico, se reporta con la línea correspondiente.
+ *
+ * Integración:
+ *   Este parser trabaja junto con el analizador léxico definido en Flex,
+ *   que provee los tokens mediante la función yylex().
+ * ======================================================================== */
 %{
 #include <stdio.h>
 #include <stdlib.h>
