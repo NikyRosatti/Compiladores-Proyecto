@@ -31,6 +31,7 @@
         case NEQ:     _name="NEQ"; break; \
         case LE:      _name="LE"; break; \
         case GE:      _name="GE"; break; \
+        case UNKNOW:  _name="UNKNOW"; break;\
         default:      _name="SIMBOLO"; break; \
     }                               \
     fprintf(f, "TOKEN: %s : '%s'\n", _name, yytext); \
@@ -121,14 +122,27 @@ int main(int argc, char **argv) {
     }
     if (strcasecmp(target, "scan") == 0) {
         int tok;
+        int lexico_valido = 1; // bandera para saber si todo es válido
+        
         while ((tok = yylex()) != 0) {
-            PRINT_TOKEN(tok);  // escribir tokens en archivo
-            if (debug) printf("%s\n", yytext);
+            if (tok == UNKNOW) {   // Si hay un token desconocido
+                fprintf(stderr, "Error léxico: '%s'\n", yytext);
+                lexico_valido = 0;
+                break;             // salir del while sin imprimir nada más
+            }
+            if (debug) PRINT_TOKEN(tok);  // Solo imprimir si todo sigue siendo válido
         }
-        printf("Lexico válido ✔️\n");
+        
         fclose(f);
         fclose(yyin);
-        return 0;
+
+        if (lexico_valido){
+            printf("Léxico válido ✔️\n");
+            return 0;
+        } else {
+            printf("Léxico inválido ⚠️\n");
+            return 1;
+        }
     }
     else if (strcasecmp(target, "parse") == 0) {
         if (yyparse() == 0) {
