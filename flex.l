@@ -15,9 +15,9 @@ NUMERO [0-9]+
 
     /* ======== PATRONES Y |ACCIONES ========== */
 %%|
-"Program"              {   printf("PROGRAM\n"); return PROGRAM;    }
+"Program"              {  return PROGRAM;    }
 "extern"              {   return EXTERN;    }
-"integer"               {   printf("T_INT\n"); return T_INT;    }
+"integer"               {  return T_INT;    }
 "bool"              {   return T_BOOL;    }
 "void"              {   return T_VOID;    }
 "return"            {   return RETURN;    }
@@ -31,17 +31,15 @@ NUMERO [0-9]+
     /* Números */
 {NUMERO}            {
                     yylval.num = atoi(yytext);
-                    printf("INT\n");
                     return INT; }
 
     /* Identificadores */
 {ID}                {
                     yylval.id = strdup(yytext);
-                    printf("ID\n");
                     return ID; }
 
     /* Operadores de un solo carácter y delimitadores */
-[-+*;(){}=!,/<>%]         {  printf("SIMBOLO\n"); return *yytext;    }
+[-+*;(){}=!,/<>%]         { return *yytext;    }
 
     /* Operadores de dos caracteres */
 "||"          {   return OR;    }
