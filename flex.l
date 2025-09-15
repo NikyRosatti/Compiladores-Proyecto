@@ -58,5 +58,5 @@ NUMERO [0-9]+
     /* Saltos de línea (opcional si quieres contar líneas) */
 \n                  { /* ignorar o contar */ }
 
-.                   { printf("Caracter desconocido: %s\n", yytext); }
+.                   { printf("Caracter desconocido: %s\n", yytext); return UNKNOW;}
 %%

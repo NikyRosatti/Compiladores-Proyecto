@@ -26,9 +26,12 @@
 
 int yylex(void);
 
+int had_error = 0;
+
 void yyerror(const char *s) {
     extern int yylineno;   
     printf("-> ERROR Sintáctico en la línea %d: %s\n", yylineno, s);
+    had_error = 1;
 }
 
 %}
@@ -43,6 +46,7 @@ void yyerror(const char *s) {
 %token IF THEN ELSE WHILE  
 %token T_INT T_BOOL T_VOID  
 %token EQ NEQ LE GE AND OR
+%token UNKNOW
 %token <num> INT
 %token <num> TRUE FALSE
 %token <id> ID 
@@ -138,7 +142,6 @@ expr : ID
      | '!' expr
      | '(' expr ')'
      ;
-
 
 %%  
 
