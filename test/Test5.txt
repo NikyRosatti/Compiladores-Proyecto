@@ -1,0 +1,14 @@
+Program {
+    void print_int(integer i) extern ;
+    integer get_int() extern ;
+
+    void main() {
+        integer y = get_int();
+        
+        if (y == 0) then {
+            print_int(1);
+        } else {
+            print_int(y + 1);
+        }
+    }
+}

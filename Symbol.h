@@ -25,6 +25,8 @@ typedef struct Symbol {
     SymbolKind kind;       /* variable o función */
     char *name;   
     Valores valor;      /* usado si es identificador */
+    struct Tree *node;
+
 } Symbol;
 
 #endif /*SYMBOL_H*/

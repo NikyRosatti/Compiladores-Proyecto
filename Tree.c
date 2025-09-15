@@ -159,63 +159,64 @@ SymbolType check_types(Tree *node){
         case NODE_FALSE: return TYPE_BOOL;
 
         case NODE_ID:{
-            if (!node->sym) {
-                semantic_error = 1;
-                return TYPE_ERROR;
+                if (!node->sym) {
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return node->sym->type; 
             }
-            return node->sym->type; 
-        }
 
         case NODE_ASSIGN: {
-            SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
-            SymbolType expr_type = check_types(node->left);
-            if (var_type != expr_type) {
-                printf("Error: asignación incompatible\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
+                SymbolType expr_type = check_types(node->left);
+                if (var_type != expr_type) {
+                    printf("Error: asignación incompatible\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return var_type;
             }
-            return var_type;
-        }
 
         case NODE_SUM:
         case NODE_RES:
         case NODE_MUL: {
-            SymbolType left = check_types(node->left);
-            SymbolType right = check_types(node->right);
-            if (left != TYPE_INT || right != TYPE_INT) {
-                printf("Error: operador aritmético espera enteros\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType left = check_types(node->left);
+                SymbolType right = check_types(node->right);
+                if (left != TYPE_INT || right != TYPE_INT) {
+                    printf("Error: operador aritmético espera enteros\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_INT;
             }
-            return TYPE_INT;
-        }
+        case NODE_MOD:
         case NODE_DIV: {
-            SymbolType left = check_types(node->left);
-            SymbolType right = check_types(node->right);
-            if (left != TYPE_INT || right != TYPE_INT) {
-                printf("Error: operador aritmético espera enteros\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            } else if(evaluate(node) == 0) {
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType left = check_types(node->left);
+                SymbolType right = check_types(node->right);
+                if (left != TYPE_INT || right != TYPE_INT) {
+                    printf("Error: operador aritmético espera enteros\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                } else if(evaluate(node) == 0) {
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_INT;
             }
-            return TYPE_INT;
-        }
 
         case NODE_LE:
         case NODE_LT:
         case NODE_GE:
         case NODE_GT: {
-            SymbolType left = check_types(node->left);
-            SymbolType right = check_types(node->right);
-            if (left != TYPE_INT || right != TYPE_INT) {
-                printf("Error: operador relacional espera enteros\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType left = check_types(node->left);
+                SymbolType right = check_types(node->right);
+                if (left != TYPE_INT || right != TYPE_INT) {
+                    printf("Error: operador relacional espera enteros\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_BOOL;
             }
-            return TYPE_BOOL;
-        }
 
         case NODE_EQ:
         case NODE_NEQ: {
@@ -231,65 +232,204 @@ SymbolType check_types(Tree *node){
 
         case NODE_OR:
         case NODE_AND: {
-            SymbolType left = check_types(node->left);
-            SymbolType right = check_types(node->right);
-            if (left != TYPE_BOOL || right != TYPE_BOOL) {
-                printf("Error: operador lógico espera booleanos\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType left = check_types(node->left);
+                SymbolType right = check_types(node->right);
+                if (left != TYPE_BOOL || right != TYPE_BOOL) {
+                    printf("Error: operador lógico espera booleanos\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_BOOL;
             }
-            return TYPE_BOOL;
-        }
 
         case NODE_NOT: {
-            SymbolType left = check_types(node->left);
-            if (left != TYPE_BOOL) {
-                printf("Error: operador NOT espera booleano\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
+                SymbolType left = check_types(node->left);
+                if (left != TYPE_BOOL) {
+                    printf("Error: operador NOT espera booleano\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_BOOL;
             }
-            return TYPE_BOOL;
-        }
 
         case NODE_PARENS:
             return check_types(node->left);
 
-        case NODE_LIST:
-        case NODE_BLOCK:
+        case NODE_LIST: {
+                check_types(node->left);
+                check_types(node->right);
+                return TYPE_VOID;
+            }
+
+        case NODE_BLOCK: {
+                check_types(node->left);
+                check_types(node->right);
+                return TYPE_VOID;
+            }
+
         case NODE_CODE:
-            // chequeo recursivo pero tipo void
             check_types(node->left);
             check_types(node->right);
             return TYPE_VOID;
 
         case NODE_PROGRAM: {
-            // push tipo del programa en la pila
-            SymbolType t;
-            if (node->left->tipo == NODE_T_INT) t = TYPE_INT;
-            else if (node->left->tipo == NODE_T_BOOL) t = TYPE_BOOL;
-            else t = TYPE_VOID;
+                // push tipo del programa en la pila
+                SymbolType t;
+                if (node->left->tipo == NODE_T_INT) t = TYPE_INT;
+                else if (node->left->tipo == NODE_T_BOOL) t = TYPE_BOOL;
+                else t = TYPE_VOID;
 
-            pushType(&typeStack, t);
-            check_types(node->right);
-            popType(&typeStack);
-            return TYPE_VOID;
-        }
+                pushType(&typeStack, t);
+                check_types(node->right);
+                popType(&typeStack);
+                return TYPE_VOID;
+            }
 
         case NODE_RETURN: {
-            SymbolType expected = peekType(&typeStack);
-            SymbolType got = node->left ? check_types(node->left) : TYPE_VOID;
-            if (expected != got) {
-                printf("Error semántico: return de tipo %d, esperado %d\n", got, expected);
+                SymbolType expected = peekType(&typeStack);
+                SymbolType got = node->left ? check_types(node->left) : TYPE_VOID;
+                if (expected != got) {
+                    printf("Error semántico: return de tipo %d, esperado %d\n", got, expected);
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return got;
+            }
+
+        case NODE_METHOD: {
+                // push tipo del método en la pila
+                SymbolType t;
+                if (node->left->tipo == NODE_T_INT) t = TYPE_INT;
+                else if (node->left->tipo == NODE_T_BOOL) t = TYPE_BOOL;
+                else t = TYPE_VOID;
+
+                pushType(&typeStack, t);
+                check_types(node->right); // cuerpo del método
+                popType(&typeStack);
+                return TYPE_VOID;
+            }   
+
+            case NODE_METHOD_CALL: {
+                Symbol *method_sym = node->sym;
+                if (!method_sym) {
+                    printf("Error: llamada a método no declarado\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                // chequeo de tipos de argumentos
+                struct Tree *ref = node->left->sym->node; //referencia a la decl del metodo
+
+                struct Tree *decl_args = ref->right;
+                struct Tree *call_args = node->right;
+                
+                struct Tree *decl_aux;
+                struct Tree *call_aux;
+                
+                while (1) {
+                    decl_aux = decl_args->left;
+                    call_aux = call_args->left;
+
+                    if (decl_aux == NULL && call_aux == NULL)
+                    {
+                        break;
+                    }
+                    if (decl_aux != NULL && call_aux == NULL || decl_aux == NULL && call_aux != NULL)
+                    {
+                        printf("Error: Cantidad de parametros distintas\n");
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                    if (check_types(call_aux) == check_types(decl_aux))
+                    {
+                        decl_args = decl_args->right;
+                        call_args = call_args->right;
+                    } else {
+                        printf("Error: Parametros con tipos distintos\n");
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                    
+                    
+                }
+
+                // Aquí podrías agregar chequeo de tipos de argumentos según la firma del método
+                return method_sym->type; // tipo de retorno del método
+            }
+
+        case NODE_UMINUS: {
+                SymbolType expr_type = check_types(node->left);
+                if (expr_type != TYPE_INT) {
+                    printf("Error: operador unario menos espera entero\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                return TYPE_INT;
+            }
+
+        case NODE_IF: {
+                    SymbolType cond_type = check_types(node->left);
+                    if (cond_type != TYPE_BOOL) {
+                        printf("Error: condición de IF debe ser booleano\n");
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                    check_types(node->right); // cuerpo del if
+                    return TYPE_VOID;
+            }
+
+        case NODE_IF_ELSE: {
+                SymbolType cond_type = check_types(node->left);
+                if (cond_type != TYPE_BOOL) {
+                    printf("Error: condición de IF debe ser booleano\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                // cuerpo del if
+                check_types(node->right->left);
+                // cuerpo del else
+                check_types(node->right->right);
+                return TYPE_VOID;
+            }
+
+        case NODE_WHILE: {
+                SymbolType cond_type = check_types(node->left);
+                if (cond_type != TYPE_BOOL) {
+                    printf("Error: condición de WHILE debe ser booleano\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+                check_types(node->right); // cuerpo del while
+                return TYPE_VOID;
+            }
+
+        case NODE_DECLARATION:
+            // chequeo condicional y bloques
+            check_types(node->left);  // condición o tipo
+            check_types(node->right); // cuerpo o inicialización
+            return TYPE_VOID;
+        
+        case NODE_ARGS:
+            // chequeo de argumentos en llamadas
+            check_types(node->left);
+            check_types(node->right);
+            return TYPE_VOID;
+        
+        case NODE_METHOD_HEADER:
+            // chequeo de la cabecera del método
+            check_types(node->left);  // tipo de retorno
+            check_types(node->right); // parámetros
+            return TYPE_VOID;
+        
+        case NODE_T_INT: return TYPE_INT;
+        
+        case NODE_T_BOOL: return TYPE_BOOL;
+        
+        case NODE_T_VOID: return TYPE_VOID;
+
+        default: {
+                printf("Error: nodo de tipo desconocido en check_types\n");
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
-            return got;
-        }
-
-        default: {
-            printf("Error: nodo de tipo desconocido en check_types\n");
-            semantic_error = 1;
-            return TYPE_ERROR;
-        }
     }
 }

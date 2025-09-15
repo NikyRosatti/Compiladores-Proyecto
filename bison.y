@@ -136,10 +136,13 @@ method_decl : all_types ID '(' params ')' block {
                         else if ($1->tipo == NODE_T_BOOL) t = TYPE_BOOL;
                         else t = TYPE_VOID;
                         s = insertSymbol(global, $2, t, v);
+                        
 
                         pushScope(&scope_stack, createTable());
 
-                        Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
+                        Tree *methodInfo;
+                        s->node = methodInfo;
+                        methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
                         $$ = createNode(NODE_METHOD, 0, methodInfo, $6);
 
                         popScope(&scope_stack);
@@ -254,7 +257,7 @@ method_call : ID '(' args ')' {
         Tree *argsNode = createNode(NODE_ARGS, 0, $3, NULL);
 
         // Nodo final del método
-        $$ = createNode(NODE_METHOD_CALL, 0, idNode, argsNode);
+        $$ = createNode(NODE_METHOD_CALL, s, idNode, argsNode);
     }
             ;
     
