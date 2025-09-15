@@ -5,7 +5,7 @@ BISON=bison.y
 FLEX=flex.l
 CC=gcc
 TARGET=parser
-OBJS=bison.tab.c lex.yy.c
+OBJS=bison.tab.c lex.yy.c tree.c SymbolTable.c Stack.c
 FLFLAGS=-lfl
 #CFLAGS=-Wall -DMODO=$(MODO)
 

@@ -15,4 +15,15 @@ SymbolType popType(TypeStack *s);
 SymbolType peekType(TypeStack *s);
 int isEmptyTypeStack(TypeStack *s);
 
+typedef struct ScopeStack {
+    SymbolTable *arr[100];  // tablas de símbolos
+    int top;
+} ScopeStack;
+
+void initScopeStack(ScopeStack *s);
+void pushScope(ScopeStack *s, SymbolTable *t);
+void popScope(ScopeStack *s);
+SymbolTable* peekScope(ScopeStack *s);
+Symbol* lookupInScopes(ScopeStack *s, const char *name);
+
 #endif

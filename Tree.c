@@ -52,10 +52,16 @@ const char* tipoToStr(typeTree t) {
         case NODE_CODE: return "CODE";
         case NODE_METHOD: return "METHOD";
         case NODE_DECLARATION: return "DECLARATION";
+        case NODE_METHOD_HEADER: return "METHOD_HEADER";
+        case NODE_METHOD_CALL: return "METHOD_CALL";
+        case NODE_UMINUS: return "UMINUS";
+        case NODE_IF: return "IF";
+        case NODE_IF_ELSE: return "IF_ELSE";
+        case NODE_WHILE: return "WHILE";
         case NODE_ASSIGN: return "=";
         case NODE_ID:    return "ID";
-        case NODE_PLUS:  return "PLUS";
         case NODE_MUL:   return "*";
+        case NODE_MOD:   return "%";
         case NODE_RES:   return "-";
         case NODE_DIV:   return "/";
         case NODE_PROGRAM: return "PROGRAM";
