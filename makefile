@@ -4,16 +4,16 @@
 BISON=bison.y
 FLEX=flex.l
 CC=gcc
-TARGET=parser
-OBJS=bison.tab.c lex.yy.c
+TARGET=c-tds
+OBJS=bison.tab.c lex.yy.c main.c
 FLFLAGS=-lfl
-#CFLAGS=-Wall -DMODO=$(MODO)
+CFLAGS=-Wall -Wextra -g #-DMODO=$(MODO)
 
 # Carpetas de resultados
 RESULT_DIRS=resultados
 
 # Tests
-TESTS=$(wildcard test/Test*.txt)
+TESTS=$(wildcard test/Test*.ctds)
 
 # Colores
 GREEN=\033[0;32m
@@ -42,7 +42,7 @@ define run_test_loop
 	@echo "${YELLOW}>> Ejecutando tests $(1)...${NC}"
 	@for t in $($(2)); do \
 		base=$$(basename $$t .txt); \
-		./$(TARGET) < $$t > resultados/$(1)/$$base.out 2>&1; \
+		./$(TARGET) $$t > resultados/$(1)/$$base.out 2>&1; \
 		code=$$?; \
 		expected_code=$(3); \
 		if [ $$code -eq $$expected_code ]; then \
@@ -60,6 +60,6 @@ run_tests: compile
 # === Limpiar binarios y resultados ===
 clean:
 	@echo "${YELLOW}>> Limpiando...${NC}"
-	rm -f $(TARGET) parserbison.tab.c parserbison.tab.h lex.yy.c
+	rm -f $(TARGET) bison.tab.c bison.tab.h lex.yy.c
 	rm -rf resultados
 	@echo "${GREEN}>> Limpieza completa${NC}"

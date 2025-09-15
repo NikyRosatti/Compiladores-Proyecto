@@ -140,14 +140,7 @@ expr : ID
      ;
 
 
-%%
-
-int main(int argc, char **argv) {
-    if (yyparse() == 0) {
-        printf("Parseo terminado correctamente ✅\n");
-    }
-    return 0;
-}        
+%%  
 
 
 
