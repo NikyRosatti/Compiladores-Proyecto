@@ -18,8 +18,8 @@ VALID_TARGETS := scan parse codinter assembly
 RESULT_DIRS=resultados
 
 # Tests
-TESTS_CORRECT=$(wildcard test/TestCorrect*.ctds)
-TESTS_FAIL=$(wildcard test/TestFail*.ctds)
+TESTS_CORRECT=$(wildcard tests/TestCorrect*.ctds)
+TESTS_FAIL=$(wildcard tests/TestFail*.ctds)
 
 # Colores
 GREEN=\033[0;32m
