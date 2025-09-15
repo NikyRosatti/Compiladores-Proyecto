@@ -9,12 +9,11 @@
 %option yylineno
 
     /* ======== EXPRESIONES REGULARES ======== */
-ALPHA       [a-zA-Z]
 ID          [a-zA-Z][a-zA-Z0-9_]*
 NUMERO [0-9]+
 
-    /* ======== PATRONES Y |ACCIONES ========== */
-%%|
+    /* ======== PATRONES Y ACCIONES ========== */
+%%
 "Program"              {  return PROGRAM;    }
 "extern"              {   return EXTERN;    }
 "integer"               {  return T_INT;    }
