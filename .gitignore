@@ -3,3 +3,4 @@ lexer
 lex.yy.c
 parser
 resultados/*
+*.out
