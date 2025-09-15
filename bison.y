@@ -202,7 +202,7 @@ params : all_types ID ',' params {
 
                 $$ = createNode(NODE_DECLARATION, aux, $1, NULL); 
             }
-        | /* vacío */ { }
+        | /* vacío */ { $$ = NULL; }
         ;
 
 all_types : T_INT { $$ = createNode(NODE_T_INT, 0, NULL, NULL); }
@@ -219,12 +219,12 @@ block : '{' block_decl block_statement '}' {
     }
     ;
 
-block_decl : var_decl block_decl 
-           | /* vacío */ { }
+block_decl : var_decl block_decl { $$ = createNode(NODE_LIST, 0, $1, $2); }
+           | /* vacío */ { $$ = NULL; }
     ;
 
-block_statement : statement block_statement
-                | /* vacío */ { }
+block_statement : statement block_statement { $$ = createNode(NODE_LIST, 0, $1, $2); }
+                | /* vacío */ { $$ = NULL; }
                 ;
     
     /*sentencias*/
