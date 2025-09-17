@@ -354,13 +354,13 @@ SymbolType check_types(Tree *node){
                     // Comparo tipos de ambos argumentos
                     if (decl_aux->left->tipo != NODE_DECLARATION)
                     {
-                        if (call_aux->left->sym->type != check_types(decl_aux->left)) {
+                        if (check_types(call_aux->left) != check_types(decl_aux->left)) {
                             printf("Error: parámetros con tipos distintos\n");
                             semantic_error = 1;
                             return TYPE_ERROR;
                         }
                     } else {
-                        if (call_aux->left->sym->type != decl_aux->left->sym->type) {
+                        if (check_types(call_aux->left) != decl_aux->left->sym->type) {
                             printf("Error: parámetros con tipos distintos\n");
                             semantic_error = 1;
                             return TYPE_ERROR;
