@@ -1,0 +1,60 @@
+Program {
+    // Variables globales
+    integer x = 10;
+    bool flag = true;
+
+    // Método sin parámetros
+    integer foo() {
+        integer a = 5;
+        integer b = 2;
+        
+        // uso de return con expresión
+        return a + b * 2;
+    }
+
+    // Método con parámetros
+    bool bar(integer m, bool n) {
+        integer local = m % 2;
+        
+        if (n && (local != 0)) then {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // Método extern
+    void external_method(integer x, bool y) extern;
+
+    // Método principal de prueba
+    void main() {
+        integer result = 0;
+        bool cond = false;
+
+        // Llamada a método
+        result = foo();
+
+        // Llamada a método con args
+        cond = bar(result, true);
+
+        // If con bloque
+        if (cond) then {
+            result = result + 1;
+        }
+
+        // If con else
+        if (result > 5) then {
+            flag = true;
+        } else {
+            flag = false;
+        }
+
+        // While con expresión
+        while result < 20 {
+            result = result + 2;
+        }
+
+        // Return vacío
+        return;
+    }
+}

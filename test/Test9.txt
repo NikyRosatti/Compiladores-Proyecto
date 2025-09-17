@@ -1,0 +1,9 @@
+Program {
+    integer externMethod(integer a, bool b, integer c) {
+        return 1;
+    }
+    void main() {
+        externMethod(12, true, 42);
+        return;
+    }
+}

@@ -83,7 +83,7 @@ program : PROGRAM '{' code '}'  {
         ;
 
 code : var_decl code { $$ = createNode(NODE_CODE, NULL,$1, $2); }
-    | method_decl code { $$ = createNode(NODE_METHOD, NULL, $1, $2); }
+    | method_decl code { $$ = createNode(NODE_CODE, NULL, $1, $2); }
     | /* vacío */ { $$ = NULL; }
     ;
 
@@ -141,9 +141,9 @@ method_decl : all_types ID '(' params ')' block {
                         pushScope(&scope_stack, createTable());
 
                         Tree *methodInfo;
-                        s->node = methodInfo;
                         methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
-                        $$ = createNode(NODE_METHOD, 0, methodInfo, $6);
+                        s->node = methodInfo;
+                        $$ = createNode(NODE_METHOD, s, methodInfo, $6);
 
                         popScope(&scope_stack);
                     }
@@ -163,6 +163,7 @@ method_decl : all_types ID '(' params ')' block {
 
                     pushScope(&scope_stack, createTable());
                     Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
+                    s->node = methodInfo;
                     $$ = createNode(NODE_METHOD, s, methodInfo, NULL);
 
                     popScope(&scope_stack);
@@ -262,7 +263,7 @@ method_call : ID '(' args ')' {
             ;
     
 args : expr ',' args { $$ = createNode(NODE_LIST, 0, $1, $3); }
-    | expr { $$ = $1; }
+    | expr { $$ = createNode(NODE_LIST, 0, $1, NULL); }
     | /* vacío */ { $$ = NULL; }
     ;
 
