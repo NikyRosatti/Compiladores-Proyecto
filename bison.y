@@ -38,9 +38,12 @@ int had_error = 0;
 
 int yylex(void);
 
+int had_error = 0;
+
 void yyerror(const char *s) {
     extern int yylineno;   
     printf("-> ERROR Sintáctico en la línea %d: %s\n", yylineno, s);
+    had_error = 1;
     had_error = 1;
 }
 
@@ -57,6 +60,7 @@ void yyerror(const char *s) {
 %token IF THEN ELSE WHILE  
 %token T_INT T_BOOL T_VOID  
 %token EQ NEQ LE GE AND OR
+%token UNKNOW
 %token <num> INT
 %token <num> TRUE FALSE
 %token <id> ID 
@@ -312,37 +316,28 @@ expr : ID {
     | '(' expr ')' { $$ = createNode(NODE_PARENS,0,$2,NULL); }
     ;
 
+%%  
 
-%%
 
-int main(int argc, char **argv) {
-    initScopeStack(&scope_stack);
-    pushScope(&scope_stack, createTable());
-    
-    ++argv,--argc;
-    if (argc > 0)
-        yyin = fopen(argv[0],"r");
-    else
-        yyin = stdin;
 
-    yyparse();
 
-    if (had_error || !ast_root) {
-        fprintf(stderr, "Se detectaron errores. No se ejecutará el AST.\n");
-        return 1;
-    }
-    printf("Árbol antes de ejecutar asignaciones:\n");
-    printTree(ast_root, 0);
 
-    // Chequeo semantico
-    check_types(ast_root);
-    if (semantic_error) {
-        fprintf(stderr, "Error semántico\n");
-        return 2;
-    } else {
-        printf("\nSIN ERRORES SEMANTICOS\n");
-    }
 
-    printSymbolTable(peekScope(&scope_stack));
-    return 0;
-}        
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+
+
+        
