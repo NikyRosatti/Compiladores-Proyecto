@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include "bison.tab.h" // para los tokens
+#include "Stack.h"
+#include "Tree.h"
+#include "SymbolTable.h"
 
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
@@ -42,6 +45,10 @@ int yyparse(void);
 extern FILE *yyin;
 extern char *yytext;
 extern int yylex(void);
+extern int semantic_error;
+extern ScopeStack scope_stack;
+extern Tree *ast_root;
+extern int had_error;
 
 void print_usage() {
     printf("Uso: c-tds [opcion] archivo.ctds\n");
@@ -58,6 +65,8 @@ int main(int argc, char **argv) {
     char *target = NULL;
     char *optimization = NULL;
     bool debug = false;
+    initScopeStack(&scope_stack);
+    pushScope(&scope_stack, createTable());
 
     static struct option long_options[] = {
         {"debug",   no_argument,       0, 'd'},

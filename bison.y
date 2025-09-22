@@ -38,7 +38,6 @@ int had_error = 0;
 
 int yylex(void);
 
-int had_error = 0;
 
 void yyerror(const char *s) {
     extern int yylineno;   
