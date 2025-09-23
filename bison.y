@@ -43,7 +43,6 @@ void yyerror(const char *s) {
     extern int yylineno;   
     printf("-> ERROR Sintáctico en la línea %d: %s\n", yylineno, s);
     had_error = 1;
-    had_error = 1;
 }
 
 %}
@@ -164,12 +163,10 @@ method_decl : all_types ID '(' params ')' block {
                     else t = TYPE_VOID;
                     s = insertSymbol(current, $2, t, v);
 
-                    pushScope(&scope_stack, createTable());
                     Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
                     s->node = methodInfo;
                     $$ = createNode(NODE_METHOD, s, methodInfo, NULL);
 
-                    popScope(&scope_stack);
                 }
             }
             ; 
