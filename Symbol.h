@@ -28,5 +28,7 @@ typedef struct Symbol {
     struct Tree *node;
 
 } Symbol;
-
+struct Tree;
+Symbol *createSymbolCall(const char *name, SymbolKind kind);
+Symbol* createSymbol(const char *name, struct Tree *typeNode, SymbolKind kind, Valores valor);
 #endif /*SYMBOL_H*/

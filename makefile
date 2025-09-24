@@ -7,7 +7,7 @@ BISON=bison.y
 FLEX=flex.l
 CC=gcc
 TARGET=c-tds
-OBJS=bison.tab.c lex.yy.c main.c tree.c SymbolTable.c Stack.c
+OBJS=bison.tab.c lex.yy.c main.c tree.c SymbolTable.c Stack.c Symbol.c
 FLFLAGS=-lfl
 CFLAGS=-Wall -Wextra -g
 # Target por defecto si no se pasa

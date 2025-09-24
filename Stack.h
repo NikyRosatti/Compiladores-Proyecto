@@ -25,5 +25,6 @@ void pushScope(ScopeStack *s, SymbolTable *t);
 void popScope(ScopeStack *s);
 SymbolTable* peekScope(ScopeStack *s);
 Symbol* lookupInScopes(ScopeStack *s, const char *name);
+void printScopeStack(ScopeStack *s);
 
 #endif

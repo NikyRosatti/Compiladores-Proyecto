@@ -1,0 +1,11 @@
+Program {
+    void inc(integer x) {
+        x = x + 1;
+    } 
+    
+
+    void main() {
+        x = 30;
+        return;
+    }
+}
