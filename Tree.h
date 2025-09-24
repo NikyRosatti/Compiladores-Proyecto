@@ -70,4 +70,6 @@ void execute(Tree *node);
 
 /*Chequeo semantico */
 SymbolType check_types(Tree *node);
+void check_scopes(Tree *node);
+
 #endif /* TREE_H */

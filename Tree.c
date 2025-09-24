@@ -5,9 +5,12 @@
 #include "Symbol.h" 
 #include "Stack.h"  
 
+
 struct Tree;  /* forward declaration */
 int semantic_error = 0;
 extern TypeStack typeStack;
+ScopeStack scope_Stack;  // pila global de scopes
+
 
 Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     Tree *n = malloc(sizeof(Tree));
@@ -315,62 +318,68 @@ SymbolType check_types(Tree *node){
             }   
 
         case NODE_METHOD_CALL: {
-            Symbol *method_sym = node->sym;
+            Symbol *method_sym = node->left->sym;
             if (!method_sym) {
                 printf("Error: llamada a método no declarada\n");
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
 
-            struct Tree *decl_args = method_sym->node->right; // parámetros de la función
-            struct Tree *call_args = node->right ? node->right->left : NULL; // argumentos pasados
+            if ( !method_sym->node) {
+                printf("Error: símbolo de método '%s' no tiene nodo asociado\n",
+                    method_sym ? method_sym->name : "(desconocido)");
+                semantic_error = 1;
+                return TYPE_ERROR;  // o lo que uses como valor de error
+            }
 
-            // recorrer listas
-            while (decl_args || call_args) {
-                struct Tree *decl_aux = NULL;
-                struct Tree *call_aux = NULL;
 
-                // obtener siguiente parámetro
-                if (decl_args) {
-                    if (decl_args->tipo == NODE_DECLARATION)
-                        decl_aux = decl_args;
-                    else if (decl_args->tipo == NODE_LIST)
-                        decl_aux = decl_args->left;
+            // Obtengo la referencia a la declaración del método
+            Tree *method_decl = method_sym->node->left;         // NODE_METHOD_HEADER
+            Tree *decl_args = method_decl->right;         // ARGS -> NODE_LIST encadenado
+            Tree *call_args = node->right;                // ARGS pasados -> NODE_LIST encadenado
+
+            Tree *d = decl_args ? decl_args->left : NULL;
+            Tree *c = call_args ? call_args->left : NULL;
+
+            // Recorremos las listas de parámetros y argumentos en paralelo
+            while (d && c) {
+                SymbolType t_decl = d->left->sym->type;
+                SymbolType t_call;
+
+                if (c->left->sym == NULL) {
+                    // todavía no se resolvió → buscá el tipo con check_types
+                    t_call = check_types(c->left);
+
+                    if (t_call == TYPE_ERROR) {
+                        printf("Error: expresión inválida en llamada a método\n");
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                } else {
+                    // ya está resuelto → uso directo
+                    t_call = c->left->sym->type;
                 }
 
-                // obtener siguiente argumento
-                if (call_args) {
-                    if (call_args->tipo == NODE_LIST)
-                        call_aux = call_args->left;
-                    else
-                        call_aux = call_args;
-                }
-
-                // si uno es NULL y el otro no → error cantidad
-                if ((decl_aux && !call_aux) || (!decl_aux && call_aux)) {
-                    printf("Error: cantidad de parámetros distintas\n");
+                if (t_decl != t_call) {
+                    printf("Error: parámetros con tipos distintos\n");
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
 
-                if (!decl_aux && !call_aux) break;
+                d = d->right;
+                c = c->right;
+            }
 
-                SymbolType expected = (decl_aux->tipo == NODE_DECLARATION) ? decl_aux->sym->type : check_types(decl_aux);
-                SymbolType given = check_types(call_aux);
-
-                if (expected != given) {
-                    printf("Error: parámetro incompatible (esperado %d, recibido %d)\n", expected, given);
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-
-                // avanzar en la lista
-                if (decl_args) decl_args = (decl_args->tipo == NODE_LIST) ? decl_args->right : NULL;
-                if (call_args) call_args = (call_args->tipo == NODE_LIST) ? call_args->right : NULL;
+            // Si alguna lista todavía tiene elementos -> error de cantidad
+            if (d || c) {
+                printf("Error: cantidad de parámetros distintas\n");
+                semantic_error = 1;
+                return TYPE_ERROR;
             }
 
             return method_sym->type;
         }
+
 
 
         case NODE_UMINUS: {
@@ -461,5 +470,108 @@ SymbolType check_types(Tree *node){
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
+    }
+}
+
+
+
+void check_scopes(Tree *node) {
+    if (!node) return;
+
+    switch (node->tipo) {
+        case NODE_PROGRAM:
+            // Scope global
+            pushScope(&scope_Stack, createTable());
+            check_scopes(node->left);   // tipo o declaraciones globales
+            check_scopes(node->right);  // resto del programa
+            popScope(&scope_Stack);
+            break;
+
+        case NODE_BLOCK:
+            pushScope(&scope_Stack, createTable());
+            check_scopes(node->left);   // declaraciones / params
+            check_scopes(node->right);  // cuerpo
+            popScope(&scope_Stack);
+            break;
+        case NODE_METHOD:
+            // Nuevo scope
+            SymbolTable *current = peekScope(&scope_Stack);
+            Symbol *sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+
+            if (sym) {
+                sym->node = node;
+                node->sym = sym;  // opcional, por si querés que apunten al mismo
+            }
+            pushScope(&scope_Stack, createTable());
+            check_scopes(node->left);   // declaraciones / params
+            check_scopes(node->right);  // cuerpo
+            popScope(&scope_Stack);
+            break;
+
+        case NODE_DECLARATION:
+            if (node->sym) {
+                SymbolTable *current = peekScope(&scope_Stack);
+                if (lookupSymbol(current, node->sym->name)) {
+                    printf("Error: redeclaración de '%s'\n", node->sym->name);
+                    semantic_error = 1;
+                } else {
+                    insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+                }
+            }
+            check_scopes(node->left);
+            check_scopes(node->right);
+            break;
+
+        case NODE_ID:
+            if (node->sym) {
+                Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
+                if (!s) {
+                    printf("Error: variable '%s' no declarada\n", node->sym->name);
+                    semantic_error = 1;
+                } else {
+                    // linkear el símbolo encontrado
+                    node->sym = s;
+                }
+            }
+            check_scopes(node->left);
+            check_scopes(node->right);
+            break;
+        
+        case NODE_METHOD_CALL:
+            if (node->sym) {
+                Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
+                if (!s) {
+                    printf("Error: llamada a método '%s' no declarado\n", node->sym->name);
+                    semantic_error = 1;
+                } else {
+                    node->sym = s;                // linkear el método
+                    node->left->sym = s;          // linkear el ID dentro del call
+                }
+            }
+            check_scopes(node->left);
+            check_scopes(node->right);
+            break;
+        
+        case NODE_ASSIGN: 
+            if (node->sym) {
+                Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
+                if (!s) {
+                    printf("Error: llamada a variable '%s' no declarado\n", node->sym->name);
+                    semantic_error = 1;
+                } else {
+                    node->sym = s;                // linkear la variable
+                    
+                }
+            }
+            check_scopes(node->left);
+            check_scopes(node->right);
+            break;
+
+
+
+        default:
+            check_scopes(node->left);
+            check_scopes(node->right);
+            break;
     }
 }
