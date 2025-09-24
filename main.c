@@ -159,6 +159,7 @@ int main(int argc, char **argv) {
             check_types(ast_root);
             if (semantic_error) {
                 fprintf(f, "Errores semánticos encontrados.\n");
+                return 2;
             } else {
                 fprintf(f, "Programa válido ✔️\n");
                 fprintf(f, "Árbol AST generado correctamente.\n");

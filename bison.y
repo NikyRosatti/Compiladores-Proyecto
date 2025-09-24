@@ -157,8 +157,10 @@ method_decl : all_types ID '(' params ')' block {
                     else if ($1->tipo == NODE_T_BOOL) t = TYPE_BOOL;
                     else t = TYPE_VOID;
                     s = insertSymbol(current, $2, t, v);
+                    
+                    Tree *param_node = $4;
 
-                    Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
+                    Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), param_node);
                     s->node = methodInfo;
                     $$ = createNode(NODE_METHOD, s, methodInfo, NULL);
 
