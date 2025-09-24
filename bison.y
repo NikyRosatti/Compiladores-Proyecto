@@ -74,13 +74,7 @@ void yyerror(const char *s) {
 %type <node> program code var_decl method_decl params all_types block block_decl block_statement statement method_call args expr
 %%
 program : PROGRAM '{' code '}'  {
-                                    
-                                    printf("Programa válido ✔️\n");
-                                
                                     ast_root = $3;
-                                    if (!had_error) {
-                                        printf("Árbol AST generado correctamente.\n");
-                                    }
                                 }
         ;
 
@@ -139,11 +133,12 @@ method_decl : all_types ID '(' params ')' block {
                         else t = TYPE_VOID;
                         s = insertSymbol(global, $2, t, v);
                         
+                        SymbolTable *method_scope = createTable();
+                        pushScope(&scope_stack, method_scope);
+                        
+                        Tree *param_node = $4;
 
-                        pushScope(&scope_stack, createTable());
-
-                        Tree *methodInfo;
-                        methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
+                        Tree *methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), param_node);
                         s->node = methodInfo;
                         $$ = createNode(NODE_METHOD, s, methodInfo, $6);
 
@@ -313,27 +308,3 @@ expr : ID {
     ;
 
 %%  
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-        

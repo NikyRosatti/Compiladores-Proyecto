@@ -163,6 +163,7 @@ SymbolType check_types(Tree *node){
     switch(node->tipo) {
 
         case NODE_INT: return TYPE_INT;
+
         case NODE_TRUE:
         case NODE_FALSE: return TYPE_BOOL;
 
@@ -316,72 +317,58 @@ SymbolType check_types(Tree *node){
         case NODE_METHOD_CALL: {
             Symbol *method_sym = node->sym;
             if (!method_sym) {
-                printf("Error: llamada a método no declarado\n");
+                printf("Error: llamada a método no declarada\n");
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
 
-            // referencia a la declaración del método
-            struct Tree *ref = node->left->sym->node;  
-            struct Tree *decl_args = ref->right;   // argumentos declarados
-            struct Tree *call_args = node->right;  // argumentos pasados en la llamada
+            struct Tree *decl_args = method_sym->node->right; // parámetros de la función
+            struct Tree *call_args = node->right ? node->right->left : NULL; // argumentos pasados
 
-            // Caso trivial: sin parámetros
-            if (!decl_args && !call_args) {
-                return method_sym->type;
-            }
+            // recorrer listas
+            while (decl_args || call_args) {
+                struct Tree *decl_aux = NULL;
+                struct Tree *call_aux = NULL;
 
-            // Error si uno es NULL y el otro no
-            if ((!decl_args && call_args) || (decl_args && !call_args)) {
-                printf("Error: cantidad de parámetros distintas\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
-            // Recorremos las dos listas en paralelo
-            while (decl_args != NULL && call_args != NULL) {
-                struct Tree *decl_aux = decl_args->left;
-                struct Tree *call_aux = call_args->left;
-
-                if (!decl_aux || !call_aux) {
-                    // Si uno de los dos es NULL pero el otro no, ya está mal
-                    if (decl_aux != call_aux) {
-                        printf("Error: cantidad de parámetros distintas\n");
-                        semantic_error = 1;
-                        return TYPE_ERROR;
-                    }
-                } else {
-                    // Comparo tipos de ambos argumentos
-                    if (decl_aux->left->tipo != NODE_DECLARATION)
-                    {
-                        if (check_types(call_aux->left) != check_types(decl_aux->left)) {
-                            printf("Error: parámetros con tipos distintos\n");
-                            semantic_error = 1;
-                            return TYPE_ERROR;
-                        }
-                    } else {
-                        if (check_types(call_aux->left) != decl_aux->left->sym->type) {
-                            printf("Error: parámetros con tipos distintos\n");
-                            semantic_error = 1;
-                            return TYPE_ERROR;
-                        }
-                    }
-                
+                // obtener siguiente parámetro
+                if (decl_args) {
+                    if (decl_args->tipo == NODE_DECLARATION)
+                        decl_aux = decl_args;
+                    else if (decl_args->tipo == NODE_LIST)
+                        decl_aux = decl_args->left;
                 }
 
-                // Avanzo en paralelo
-                decl_args = decl_args->right;
-                call_args = call_args->right;
+                // obtener siguiente argumento
+                if (call_args) {
+                    if (call_args->tipo == NODE_LIST)
+                        call_aux = call_args->left;
+                    else
+                        call_aux = call_args;
+                }
+
+                // si uno es NULL y el otro no → error cantidad
+                if ((decl_aux && !call_aux) || (!decl_aux && call_aux)) {
+                    printf("Error: cantidad de parámetros distintas\n");
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+
+                if (!decl_aux && !call_aux) break;
+
+                SymbolType expected = (decl_aux->tipo == NODE_DECLARATION) ? decl_aux->sym->type : check_types(decl_aux);
+                SymbolType given = check_types(call_aux);
+
+                if (expected != given) {
+                    printf("Error: parámetro incompatible (esperado %d, recibido %d)\n", expected, given);
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
+
+                // avanzar en la lista
+                if (decl_args) decl_args = (decl_args->tipo == NODE_LIST) ? decl_args->right : NULL;
+                if (call_args) call_args = (call_args->tipo == NODE_LIST) ? call_args->right : NULL;
             }
 
-            // Si alguna lista todavía tiene elementos -> error de cantidad
-            if (decl_args != NULL || call_args != NULL) {
-                printf("Error: cantidad de parámetros distintas\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
-            // Si pasó todo -> correcto
             return method_sym->type;
         }
 
@@ -435,16 +422,20 @@ SymbolType check_types(Tree *node){
         case NODE_DECLARATION: {
         
             // chequeo condicional y bloques
-            SymbolType var_type = check_types(node->left);  // condición o tipo
+            SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
 
-            if (var_type == check_types(node->right))
-            {
-                return var_type;
-            } else {
-                printf("Error: declaración con tipo incompatible %s\n", node->sym->name);
+            SymbolType init_type = TYPE_VOID;
+            if (node->right) {
+                init_type = check_types(node->right);
+            }
+            if (init_type != TYPE_VOID && var_type != init_type) {
+                printf("Error: declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)\n",
+                        node->sym ? node->sym->name : "?", var_type, init_type);
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
+
+            return var_type;
         }
         
         case NODE_ARGS:
