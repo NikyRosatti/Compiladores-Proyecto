@@ -155,8 +155,14 @@ int main(int argc, char **argv) {
     }
     else if (strcasecmp(target, "parse") == 0) {
         if (yyparse() == 0) {
-            fprintf(f, "Árbol sintáctico generado:\n");
-            fprintf(f, "Programa válido ✔️\n");
+            printTree(ast_root, 0);
+            check_types(ast_root);
+            if (semantic_error) {
+                fprintf(f, "Errores semánticos encontrados.\n");
+            } else {
+                fprintf(f, "Programa válido ✔️\n");
+                fprintf(f, "Árbol AST generado correctamente.\n");
+            }
         } else {
             fprintf(stderr, "Error en el parseo ❌\n");
             fclose(f);
