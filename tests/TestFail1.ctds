@@ -1,0 +1,10 @@
+Program {
+    void foo(integer valeBot) {
+        valeBot = 1;
+    }
+
+    void main() {
+        valeBot = 10;
+        return;
+    }
+}

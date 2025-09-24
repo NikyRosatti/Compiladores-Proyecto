@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include "Stack.h"
+#define MAX_SCOPES 100
+
+SymbolTable *allScopes[MAX_SCOPES];
+int allScopesCount = 0;
 
 TypeStack typeStack;
+ScopeStack scopeStack;
 
 void initTypeStack(TypeStack *s) {
     s->top = -1;
@@ -49,6 +54,10 @@ void popScope(ScopeStack *s) {
         printf("Pila de scopes vacía\n");
         return;
     }
+    // guardamos el scope antes de eliminarlo
+    if (allScopesCount < MAX_SCOPES) {
+        allScopes[allScopesCount++] = s->arr[s->top];
+    }
     s->top--;
 }
 
@@ -63,4 +72,13 @@ Symbol* lookupInScopes(ScopeStack *s, const char *name) {
         if (sym) return sym;
     }
     return NULL;
+}
+
+void printAllScopes() {
+    printf("=== TODOS LOS SCOPES ===\n");
+    for (int i = 0; i <= scopeStack.top; i++) {
+        printf("Scope %d:\n", i);
+        printTable(scopeStack.arr[i]); // asumimos que printTable() imprime todos los símbolos del scope
+    }
+    printf("=======================\n");
 }

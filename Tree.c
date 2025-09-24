@@ -2,15 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 #include "Tree.h"
-#include "Symbol.h" 
-#include "Stack.h"  
+#include "Symbol.h"
+#include "Stack.h"
 
-struct Tree;  /* forward declaration */
 int semantic_error = 0;
 extern TypeStack typeStack;
+extern ScopeStack scopeStack;
 
+// ==================== CREACIÓN DE NODOS ====================
 Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     Tree *n = malloc(sizeof(Tree));
+    if (!n) { fprintf(stderr,"Error: sin memoria\n"); exit(1); }
     n->tipo = tipo;
     n->sym = sym;
     n->left = left;
@@ -18,11 +20,30 @@ Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     return n;
 }
 
+// Helpers para crear símbolos constantes
+Symbol* makeIntSymbol(int val) {
+    Symbol *s = malloc(sizeof(Symbol));
+    if(!s){ fprintf(stderr,"Error: sin memoria\n"); exit(1);}
+    s->name = NULL;
+    s->type = TYPE_INT;
+    s->valor.value = val;
+    return s;
+}
+
+Symbol* makeBoolSymbol(int val) {
+    Symbol *s = malloc(sizeof(Symbol));
+    if(!s){ fprintf(stderr,"Error: sin memoria\n"); exit(1);}
+    s->name = NULL;
+    s->type = TYPE_BOOL;
+    s->valor.value = val;
+    return s;
+}
+
+// ==================== IMPRESIÓN DE ÁRBOLES ====================
 void printTree(Tree *n, int level) {
     if (!n) return;
 
     for (int i = 0; i < level; i++) printf("  ");
-
     const char *tipo = tipoToStr(n->tipo);
 
     if (n->sym) {
@@ -36,14 +57,14 @@ void printTree(Tree *n, int level) {
     }
 
     if (n->left) {
-        for (int i = 0; i <= level; i++) printf("  ");
+        for(int i=0;i<=level;i++) printf("  ");
         printf("left:\n");
-        printTree(n->left, level + 2);
+        printTree(n->left, level+2);
     }
     if (n->right) {
-        for (int i = 0; i <= level; i++) printf("  ");
+        for(int i=0;i<=level;i++) printf("  ");
         printf("right:\n");
-        printTree(n->right, level + 2);
+        printTree(n->right, level+2);
     }
 }
 
@@ -86,389 +107,198 @@ const char* tipoToStr(typeTree t) {
         case NODE_LT:   return "<";
         case NODE_GE:   return ">=";
         case NODE_GT:   return ">";
-        default:         return "STRING";
+        default:         return "UNKNOWN";
     }
 }
 
+// ==================== EVALUACIÓN ====================
 int evaluate(Tree *node) {
     if (!node) return 0;
+
     switch(node->tipo) {
         case NODE_INT: return node->sym->valor.value;
         case NODE_TRUE: return 1;
         case NODE_FALSE: return 0;
-
-        case NODE_ID: return node->sym->valor.value;
-        
+        case NODE_ID: {
+            Symbol *s = lookupInScopes(&scopeStack, node->sym->name);
+            if (!s) { 
+                printf("Error: variable %s no declarada\n", node->sym->name);
+                semantic_error = 1;
+                return 0;
+            }
+            return s->valor.value;
+        }
         case NODE_SUM: return evaluate(node->left) + evaluate(node->right);
         case NODE_RES: return evaluate(node->left) - evaluate(node->right);
         case NODE_MUL: return evaluate(node->left) * evaluate(node->right);
-        case NODE_DIV: 
-            if (evaluate(node->right) == 0) {
-                printf("Error: División por cero\n");
-                return 0;
-            } else {
-                return evaluate(node->left) / evaluate(node->right);
-            }
-        case NODE_MOD: {
-            int right = evaluate(node->right);
-            if (right == 0) {
-                printf("Error: Módulo por cero\n");
-                return 0;
-            }
-            return evaluate(node->left) % right;
-        }    
-        case NODE_PARENS: return evaluate(node->left);  
-
-        case NODE_OR:    return evaluate(node->left) || evaluate(node->right);
-        case NODE_AND:   return evaluate(node->left) && evaluate(node->right);
-        case NODE_NOT:   return !evaluate(node->left);
-        case NODE_EQ:    return evaluate(node->left) == evaluate(node->right);
-        case NODE_NEQ:   return evaluate(node->left) != evaluate(node->right);
-        case NODE_LE:    return evaluate(node->left) <= evaluate(node->right);
-        case NODE_LT:    return evaluate(node->left) <  evaluate(node->right);
-        case NODE_GE:    return evaluate(node->left) >= evaluate(node->right);
-        case NODE_GT:    return evaluate(node->left) >  evaluate(node->right);
-
-        // Agregá más operadores según tu gramática
+        case NODE_DIV: { int r = evaluate(node->right); return r==0?0:evaluate(node->left)/r; }
+        case NODE_MOD: { int r = evaluate(node->right); return r==0?0:evaluate(node->left)%r; }
+        case NODE_PARENS: return evaluate(node->left);
+        case NODE_OR: return evaluate(node->left)||evaluate(node->right);
+        case NODE_AND: return evaluate(node->left)&&evaluate(node->right);
+        case NODE_NOT: return !evaluate(node->left);
+        case NODE_EQ: return evaluate(node->left)==evaluate(node->right);
+        case NODE_NEQ: return evaluate(node->left)!=evaluate(node->right);
+        case NODE_LE: return evaluate(node->left)<=evaluate(node->right);
+        case NODE_LT: return evaluate(node->left)<evaluate(node->right);
+        case NODE_GE: return evaluate(node->left)>=evaluate(node->right);
+        case NODE_GT: return evaluate(node->left)>evaluate(node->right);
         default: return 0;
     }
 }
 
+// ==================== EJECUCIÓN ====================
 void execute(Tree *node) {
-    if (!node) return;
+    if(!node) return;
 
     switch(node->tipo) {
-        case NODE_ASSIGN:
-            node->sym->valor.value = evaluate(node->left);
+        case NODE_ASSIGN: {
+            Symbol *s = lookupInScopes(&scopeStack, node->sym->name);
+            if(!s) { printf("Error: variable %s no declarada\n", node->sym->name); return; }
+            s->valor.value = evaluate(node->left);
+            break;
+        }
+
+        case NODE_BLOCK:
+        case NODE_LIST:
+            pushScope(&scopeStack, createTable());
+            if(node->left) execute(node->left);
+            if(node->right) execute(node->right);
+            popScope(&scopeStack);
             break;
 
-        case NODE_LIST:
-        case NODE_BLOCK:
-        case NODE_PROGRAM:
         case NODE_METHOD:
-        case NODE_CODE:
-            execute(node->left);
-            execute(node->right);
+            pushScope(&scopeStack, createTable());
+            if(node->left) addParamsToScope(node->left);
+            if(node->right) execute(node->right);
+            popScope(&scopeStack);
+            break;
+
+        case NODE_PROGRAM:
+            if(node->left) execute(node->left);
+            if(node->right) execute(node->right);
             break;
 
         default:
-            // Otros nodos no hacen nada
+            if(node->left) execute(node->left);
+            if(node->right) execute(node->right);
             break;
     }
 }
 
-SymbolType check_types(Tree *node){
-    if (!node) return TYPE_VOID;  // nodo vacío siempre error
+// ==================== CHECK TYPES ====================
+SymbolType check_types(Tree *node) {
+    if (!node) return TYPE_VOID;
 
     switch(node->tipo) {
-
         case NODE_INT: return TYPE_INT;
         case NODE_TRUE:
         case NODE_FALSE: return TYPE_BOOL;
 
-        case NODE_ID:{
-                if (!node->sym) {
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return node->sym->type; 
+        case NODE_ID: {
+            Symbol *s = lookupInScopes(&scopeStack, node->sym->name);
+            if(!s) { 
+                printf("Error semántico: variable %s no declarada\n", node->sym->name);
+                semantic_error = 1; 
+                return TYPE_ERROR;
             }
+            return s->type;
+        }
 
         case NODE_ASSIGN: {
-                SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
-                SymbolType expr_type = check_types(node->left);
-                if (var_type != expr_type) {
-                    printf("Error: asignación incompatible\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return var_type;
-            }
-
-        case NODE_SUM:
-        case NODE_RES:
-        case NODE_MUL: {
-                SymbolType left = check_types(node->left);
-                SymbolType right = check_types(node->right);
-                if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador aritmético espera enteros\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_INT;
-            }
-        case NODE_MOD:
-        case NODE_DIV: {
-                SymbolType left = check_types(node->left);
-                SymbolType right = check_types(node->right);
-                if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador aritmético espera enteros\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                } else if(evaluate(node->right) == 0) {
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_INT;
-            }
-
-        case NODE_LE:
-        case NODE_LT:
-        case NODE_GE:
-        case NODE_GT: {
-                SymbolType left = check_types(node->left);
-                SymbolType right = check_types(node->right);
-                if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador relacional espera enteros\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_BOOL;
-            }
-
-        case NODE_EQ:
-        case NODE_NEQ: {
-            SymbolType left = check_types(node->left);
-            SymbolType right = check_types(node->right);
-            if (left != right) {
-                printf("Error: comparación de tipos incompatibles\n");
+            SymbolType t = check_types(node->left);
+            Symbol *s = lookupInScopes(&scopeStack, node->sym->name);
+            if(!s) { 
+                printf("Error semántico: variable %s no declarada\n", node->sym->name);
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
-            return TYPE_BOOL;
+            if(t != s->type){
+                printf("Error semántico: asignación de tipo incorrecto a %s\n", node->sym->name);
+                semantic_error=1;
+                return TYPE_ERROR;
+            }
+            return s->type;
         }
 
-        case NODE_OR:
-        case NODE_AND: {
-                SymbolType left = check_types(node->left);
-                SymbolType right = check_types(node->right);
-                if (left != TYPE_BOOL || right != TYPE_BOOL) {
-                    printf("Error: operador lógico espera booleanos\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_BOOL;
+        case NODE_DECLARATION:
+            if(node->sym) {
+                SymbolTable *current = peekScope(&scopeStack);
+                addSymbol(current, node->sym);
+                printf("[check_types] Declarando %s en scope %d\n", node->sym->name, scopeStack.top-1);
+            }
+            return node->sym ? node->sym->type : TYPE_ERROR;
+
+        case NODE_METHOD:
+            // Primero agregamos el método al scope global
+            if(node->sym) {
+                addSymbol(scopeStack.arr[0], node->sym); // scope 0 = global
+                printf("[check_types] Método %s agregado al global\n", node->sym->name);
             }
 
-        case NODE_NOT: {
-                SymbolType left = check_types(node->left);
-                if (left != TYPE_BOOL) {
-                    printf("Error: operador NOT espera booleano\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_BOOL;
-            }
-
-        case NODE_PARENS:
-            return check_types(node->left);
-
-        case NODE_LIST: {
-                check_types(node->left);
-                check_types(node->right);
-                return TYPE_VOID;
-            }
-
-        case NODE_BLOCK: {
-                check_types(node->left);
-                check_types(node->right);
-                return TYPE_VOID;
-            }
-
-        case NODE_CODE:
-            check_types(node->left);
-            check_types(node->right);
+            // Abrimos scope propio del método
+            pushScope(&scopeStack, createTable());
+            if(node->left) addParamsToScope(node->left); // parámetros solo aquí
+            if(node->right) check_types(node->right);   // bloque del método
+            popScope(&scopeStack);
             return TYPE_VOID;
 
-        case NODE_PROGRAM: {
-                // push tipo del programa en la pila
-                SymbolType t;
-                if (node->left->tipo == NODE_T_INT) t = TYPE_INT;
-                else if (node->left->tipo == NODE_T_BOOL) t = TYPE_BOOL;
-                else t = TYPE_VOID;
-
-                pushType(&typeStack, t);
-                check_types(node->right);
-                popType(&typeStack);
-                return TYPE_VOID;
-            }
-
-        case NODE_RETURN: {
-                SymbolType expected = peekType(&typeStack);
-                SymbolType got = node->left ? check_types(node->left) : TYPE_VOID;
-                if (expected != got) {
-                    printf("Error semántico: return de tipo %d, esperado %d\n", got, expected);
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return got;
-            }
-
-        case NODE_METHOD: {
-                // push tipo del método en la pila
-                SymbolType t = node->sym->type;
-                pushType(&typeStack, t);
-                check_types(node->right); // cuerpo del método
-                popType(&typeStack);
-                return TYPE_VOID;
-            }   
-
-        case NODE_METHOD_CALL: {
-            Symbol *method_sym = node->sym;
-            if (!method_sym) {
-                printf("Error: llamada a método no declarado\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
-            // referencia a la declaración del método
-            struct Tree *ref = node->left->sym->node;  
-            struct Tree *decl_args = ref->right;   // argumentos declarados
-            struct Tree *call_args = node->right;  // argumentos pasados en la llamada
-
-            // Caso trivial: sin parámetros
-            if (!decl_args && !call_args) {
-                return method_sym->type;
-            }
-
-            // Error si uno es NULL y el otro no
-            if ((!decl_args && call_args) || (decl_args && !call_args)) {
-                printf("Error: cantidad de parámetros distintas\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
-            // Recorremos las dos listas en paralelo
-            while (decl_args != NULL && call_args != NULL) {
-                struct Tree *decl_aux = decl_args->left;
-                struct Tree *call_aux = call_args->left;
-
-                if (!decl_aux || !call_aux) {
-                    // Si uno de los dos es NULL pero el otro no, ya está mal
-                    if (decl_aux != call_aux) {
-                        printf("Error: cantidad de parámetros distintas\n");
-                        semantic_error = 1;
-                        return TYPE_ERROR;
-                    }
-                } else {
-                    // Comparo tipos de ambos argumentos
-                    if (decl_aux->left->tipo != NODE_DECLARATION)
-                    {
-                        if (check_types(call_aux->left) != check_types(decl_aux->left)) {
-                            printf("Error: parámetros con tipos distintos\n");
-                            semantic_error = 1;
-                            return TYPE_ERROR;
-                        }
-                    } else {
-                        if (check_types(call_aux->left) != decl_aux->left->sym->type) {
-                            printf("Error: parámetros con tipos distintos\n");
-                            semantic_error = 1;
-                            return TYPE_ERROR;
-                        }
-                    }
-                
-                }
-
-                // Avanzo en paralelo
-                decl_args = decl_args->right;
-                call_args = call_args->right;
-            }
-
-            // Si alguna lista todavía tiene elementos -> error de cantidad
-            if (decl_args != NULL || call_args != NULL) {
-                printf("Error: cantidad de parámetros distintas\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
-            // Si pasó todo -> correcto
-            return method_sym->type;
-        }
-
-
-        case NODE_UMINUS: {
-                SymbolType expr_type = check_types(node->left);
-                if (expr_type != TYPE_INT) {
-                    printf("Error: operador unario menos espera entero\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                return TYPE_INT;
-            }
-
-        case NODE_IF: {
-                    SymbolType cond_type = check_types(node->left);
-                    if (cond_type != TYPE_BOOL) {
-                        printf("Error: condición de IF debe ser booleano\n");
-                        semantic_error = 1;
-                        return TYPE_ERROR;
-                    }
-                    check_types(node->right); // cuerpo del if
-                    return TYPE_VOID;
-            }
-
-        case NODE_IF_ELSE: {
-                SymbolType cond_type = check_types(node->left);
-                if (cond_type != TYPE_BOOL) {
-                    printf("Error: condición de IF debe ser booleano\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                // cuerpo del if
-                check_types(node->right->left);
-                // cuerpo del else
-                check_types(node->right->right);
-                return TYPE_VOID;
-            }
-
-        case NODE_WHILE: {
-                SymbolType cond_type = check_types(node->left);
-                if (cond_type != TYPE_BOOL) {
-                    printf("Error: condición de WHILE debe ser booleano\n");
-                    semantic_error = 1;
-                    return TYPE_ERROR;
-                }
-                check_types(node->right); // cuerpo del while
-                return TYPE_VOID;
-            }
-
-        case NODE_DECLARATION: {
-        
-            // chequeo condicional y bloques
-            SymbolType var_type = check_types(node->left);  // condición o tipo
-
-            if (var_type == check_types(node->right))
-            {
-                return var_type;
-            } else {
-                printf("Error: declaración con tipo incompatible %s\n", node->sym->name);
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-        }
-        
-        case NODE_ARGS:
-            // chequeo de argumentos en llamadas
-            check_types(node->left);
-            check_types(node->right);
+        case NODE_BLOCK:
+        case NODE_LIST:
+            pushScope(&scopeStack, createTable());
+            if(node->left) check_types(node->left);
+            if(node->right) check_types(node->right);
+            popScope(&scopeStack);
             return TYPE_VOID;
-        
-        case NODE_METHOD_HEADER:
-            // chequeo de la cabecera del método
-            check_types(node->left);  // tipo de retorno
-            check_types(node->right); // parámetros
-            return TYPE_VOID;
-        
-        case NODE_T_INT: return TYPE_INT;
-        
-        case NODE_T_BOOL: return TYPE_BOOL;
-        
-        case NODE_T_VOID: return TYPE_VOID;
 
-        default: {
-                printf("Error: nodo de tipo desconocido en check_types\n");
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
+        case NODE_PROGRAM:
+            // El global ya existe en scopeStack.arr[0]
+            if(node->left) check_types(node->left);
+            if(node->right) check_types(node->right);
+            return TYPE_VOID;
+
+        default:
+            if(node->left) check_types(node->left);
+            if(node->right) check_types(node->right);
+            return TYPE_VOID;
     }
+}
+
+// ==================== RECORRIDO DE PARÁMETROS ====================
+// Agrega parámetros al scope actual (ya debe existir)
+void addParamsToScope(Tree *header) {
+    if (!header || header->tipo != NODE_METHOD_HEADER) return;
+    Tree *args = header->right;
+    addParamsRecursive(args);
+}
+
+void addParamsRecursive(Tree *params) {
+    if (!params) return;
+
+    SymbolTable *currentScope = peekScope(&scopeStack);
+    if (!currentScope) {
+        printf("Error: no hay scope activo para agregar parámetros\n");
+        semantic_error = 1;
+        return;
+    }
+
+    if (params->tipo == NODE_DECLARATION && params->sym) {
+        // Hacemos una copia del símbolo para este scope
+        Symbol *s = malloc(sizeof(Symbol));
+        *s = *(params->sym);  // copia bit a bit
+        if (params->sym->name)
+            s->name = strdup(params->sym->name);
+        addSymbol(currentScope, s);
+        printf("[addParamsToScope] Insertando parámetro %s en scope %d\n",
+                s->name, scopeStack.top);
+    }
+
+    addParamsRecursive(params->left);
+    addParamsRecursive(params->right);
+}
+
+// Busca solo en el scope actual
+Symbol* lookupCurrentScope(ScopeStack *stack, const char *name) {
+    if(stack->top <= 0) return NULL;
+    return lookupSymbol(stack->arr[stack->top-1], name);
 }

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Symbol.h"
+#include "Stack.h" 
 
 struct Tree;
 
@@ -65,11 +66,14 @@ typedef struct Queue {
 /* Funciones principales de manejo de árbol */
 Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right);
 void printTree(Tree *n, int level);
-const char* tipoToStr(typeTree t);
+int evaluate(Tree *node);
 void execute(Tree *node);
-
-/*Chequeo semantico */
 SymbolType check_types(Tree *node);
+void addParamsToScope(Tree *header);
+void addParamsRecursive(Tree *params);
+void printScopeStack();
+Symbol* lookupCurrentScope(ScopeStack *stack, const char *name);
+const char* tipoToStr(typeTree t);
 
 
 #endif /* TREE_H */

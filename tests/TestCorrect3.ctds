@@ -2,10 +2,12 @@ Program
   {
     void print_int(integer i) extern ;
 
-    void main()
-    {
+    void foo() {
+      return;
+    }
+    
+    void main() {
       integer y = 0;
-      y = get_int();
       while (5>4) {
         y = y + 1;
       }

@@ -30,8 +30,9 @@
 extern FILE *yyin;
 extern int yylineno;
 extern int semantic_error;
+extern ScopeStack scopeStack;
+extern TypeStack typeStack;
 
-ScopeStack scope_stack;
 Tree *ast_root;
 
 int had_error = 0;
@@ -90,7 +91,7 @@ code : var_decl code { $$ = createNode(NODE_CODE, NULL,$1, $2); }
     ;
 
 var_decl : all_types ID '=' expr ';' {
-                SymbolTable *current = peekScope(&scope_stack);
+                SymbolTable *current = peekScope(&scopeStack);
                 Symbol *s = lookupSymbol(current, $2);
                 if (s) {
                     fprintf(stderr, "Error: variable '%s' ya declarada\n", $2);
@@ -106,7 +107,7 @@ var_decl : all_types ID '=' expr ';' {
                 $$ = createNode(NODE_DECLARATION, aux, $1, $4);
             }
         | all_types ID ';' { 
-            SymbolTable *current = peekScope(&scope_stack);
+            SymbolTable *current = peekScope(&scopeStack);
 
             Symbol *s = lookupSymbol(current, $2);
             if (s) {
@@ -127,7 +128,7 @@ var_decl : all_types ID '=' expr ';' {
 
 
 method_decl : all_types ID '(' params ')' block { 
-                    SymbolTable *global = peekScope(&scope_stack);
+                    SymbolTable *global = peekScope(&scopeStack);
                     Symbol *s = lookupSymbol(global, $2);
                     if (s) {
                         fprintf(stderr, "Error: Metodo '%s' ya declarada\n", $2);
@@ -138,20 +139,15 @@ method_decl : all_types ID '(' params ')' block {
                         else if ($1->tipo == NODE_T_BOOL) t = TYPE_BOOL;
                         else t = TYPE_VOID;
                         s = insertSymbol(global, $2, t, v);
-                        
-
-                        pushScope(&scope_stack, createTable());
 
                         Tree *methodInfo;
                         methodInfo = createNode(NODE_METHOD_HEADER, 0, createNode(NODE_ID, s, $1, NULL), createNode(NODE_ARGS, 0, $4, NULL));
                         s->node = methodInfo;
                         $$ = createNode(NODE_METHOD, s, methodInfo, $6);
-
-                        popScope(&scope_stack);
                     }
                 }
             | all_types ID '(' params ')' EXTERN ';' {
-                SymbolTable *current = peekScope(&scope_stack);
+                SymbolTable *current = peekScope(&scopeStack);
                 Symbol *s = lookupSymbol(current, $2);
                 if (s) {
                     fprintf(stderr, "Error: Metodo '%s' ya declarada\n", $2);
@@ -173,7 +169,7 @@ method_decl : all_types ID '(' params ')' block {
 
 
 params : all_types ID ',' params {
-                SymbolTable *current = peekScope(&scope_stack);
+                SymbolTable *current = peekScope(&scopeStack);
                 Symbol *s = lookupSymbol(current, $2);
                 if (s) {
                     fprintf(stderr, "Error: parámetro '%s' ya declarado en este scope\n", $2);
@@ -190,7 +186,7 @@ params : all_types ID ',' params {
                 $$ = createNode(NODE_LIST, 0, createNode(NODE_DECLARATION, aux, $1, NULL), $4);
             }
         | all_types ID  { 
-                SymbolTable *current = peekScope(&scope_stack);
+                SymbolTable *current = peekScope(&scopeStack);
                 Symbol *s = lookupSymbol(current, $2);
                 if (s) {
                     fprintf(stderr, "Error: parámetro '%s' ya declarado en este scope\n", $2);
@@ -215,11 +211,9 @@ all_types : T_INT { $$ = createNode(NODE_T_INT, 0, NULL, NULL); }
     ;
 
 block : '{' block_decl block_statement '}' {
-        pushScope(&scope_stack, createTable());
 
         $$ = createNode(NODE_BLOCK, 0, $2, $3);
 
-        popScope(&scope_stack);
     }
     ;
 
@@ -233,9 +227,10 @@ block_statement : statement block_statement { $$ = createNode(NODE_LIST, 0, $1, 
     
     /*sentencias*/
 statement : ID '=' expr ';' {
-                Symbol *s = lookupInScopes(&scope_stack, $1);
-                if (!s) {
+                Symbol *s = lookupInScopes(&scopeStack, $1);
+                if(!s){
                     fprintf(stderr, "Error: variable '%s' no declarada\n", $1);
+                    semantic_error = 1;
                 }
                 $$ = createNode(NODE_ASSIGN, s, $3, NULL);
             }
@@ -250,7 +245,10 @@ statement : ID '=' expr ';' {
     ;
 
 method_call : ID '(' args ')' { 
-        Symbol *s = lookupInScopes(&scope_stack, $1);
+        Symbol *s = lookupInScopes(&scopeStack, $1);
+        if (!s) { 
+            fprintf(stderr, "Error: método '%s' no declarado\n", $1);
+        }
         // Creamos el nodo del identificador
         Tree *idNode = createNode(NODE_ID, s, NULL, NULL);
 
@@ -268,9 +266,10 @@ args : expr ',' args { $$ = createNode(NODE_LIST, 0, $1, $3); }
     ;
 
 expr : ID {
-            Symbol *s = lookupInScopes(&scope_stack, $1);
+            Symbol *s = lookupInScopes(&scopeStack, $1);
             if (!s) {
                 fprintf(stderr, "Error: variable '%s' no declarada\n", $1);
+                semantic_error = 1;
             }
             $$ = createNode(NODE_ID, s, NULL, NULL);
         }

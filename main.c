@@ -10,6 +10,8 @@
 #include "Tree.h"
 #include "SymbolTable.h"
 
+extern int yylineno;
+
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
     const char *_name = NULL;       \
@@ -46,7 +48,8 @@ extern FILE *yyin;
 extern char *yytext;
 extern int yylex(void);
 extern int semantic_error;
-extern ScopeStack scope_stack;
+extern ScopeStack scopeStack;
+extern TypeStack typeStack;
 extern Tree *ast_root;
 extern int had_error;
 
@@ -65,8 +68,13 @@ int main(int argc, char **argv) {
     char *target = NULL;
     char *optimization = NULL;
     bool debug = false;
-    initScopeStack(&scope_stack);
-    pushScope(&scope_stack, createTable());
+    // Inicializar pilas
+    initTypeStack(&typeStack);
+    initScopeStack(&scopeStack);
+
+    // Crear el scope global
+    SymbolTable *global = createTable();
+    pushScope(&scopeStack, global);
 
     static struct option long_options[] = {
         {"debug",   no_argument,       0, 'd'},
@@ -134,6 +142,7 @@ int main(int argc, char **argv) {
         int lexico_valido = 1; // bandera para saber si todo es válido
         
         while ((tok = yylex()) != 0) {
+            printf("Token %d recibido en línea %d: %s\n", tok, yylineno, yytext);
             if (tok == UNKNOW) {   // Si hay un token desconocido
                 fprintf(stderr, "Error léxico: '%s'\n", yytext);
                 lexico_valido = 0;
@@ -155,7 +164,26 @@ int main(int argc, char **argv) {
     }
     else if (strcasecmp(target, "parse") == 0) {
         if (yyparse() == 0) {
-            fprintf(f, "Árbol sintáctico generado:\n");
+            printf("Árbol antes de ejecutar asignaciones:\n");
+            printTree(ast_root, 0);
+
+            // Chequeo semantico
+            check_types(ast_root);
+            if (semantic_error) {
+                fprintf(stderr, "Error semántico\n");
+                return 2;
+            } else {
+                printf("\nSIN ERRORES SEMANTICOS\n");
+            }
+
+            // Ejecutar
+            execute(ast_root);
+            printf("Programa ejecutado correctamente ✔️\n");
+
+            //printSymbolTable(peekScope(&scopeStack));
+
+            printAllScopes();
+
             fprintf(f, "Programa válido ✔️\n");
         } else {
             fprintf(stderr, "Error en el parseo ❌\n");
