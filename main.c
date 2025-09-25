@@ -64,7 +64,7 @@ void print_usage() {
 int main(int argc, char **argv) {
     int opt;
     char *output_file = NULL;
-    char *target = NULL;
+    char *target = "parse";
     char *optimization = NULL;
     bool debug = false;
     initScopeStack(&scope_Stack);
