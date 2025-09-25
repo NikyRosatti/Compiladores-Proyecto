@@ -1,0 +1,54 @@
+Program {
+    // Variables globales
+    integer a = true;        // ❌ Asignación de bool a int
+    bool b = 10;         // ❌ Asignación de int a bool
+    void v;              // ❌ Declaración de variable tipo void
+
+    // Método que promete int pero retorna bool
+    integer wrongReturn() {
+        bool flag = false;
+        return flag;     // ❌ Return de bool en método int
+    }
+
+    // Método que promete void pero retorna algo
+    void badVoid() {
+        return 123;      // ❌ Return con valor en void
+    }
+
+    // Método con parámetros
+    bool check(integer x, bool y) {
+        return x + y;    // ❌ Operación int + bool
+    }
+
+    // Método extern con tipo inválido en parámetros
+    integer externMethod(void bad) extern;   // ❌ parámetro void
+
+    // Método principal
+    void main() {
+        integer x;
+        bool z;
+
+        x = 5 + true;            // ❌ suma de int + bool
+        z = 7 * 3;               // ❌ asignación int en bool
+        z = check(true, 10);     // ❌ parámetros invertidos
+
+        // Uso de variable no declarada
+        y = 50;                  // ❌ "y" no existe
+
+        // Llamada a método con parámetros de más
+        x = wrongReturn(123);    // ❌ wrongReturn no recibe args
+
+        // If con expresión no booleana
+        if (5 + 2) then {        // ❌ condición int en if
+            x = 1;
+        }
+
+        // While con condición booleana mal usada
+        while a {                // ❌ "a" es int, se espera bool
+            x = x - 1;
+        }
+
+        // Return en main (void) con valor
+        return x;                // ❌ Return con valor en void
+    }
+}

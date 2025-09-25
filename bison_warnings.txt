@@ -1,0 +1,9 @@
+bison.y:133.1-2: error: invalid characters: ‘$@’
+  133 | $@1: { pushScope(&scope_stack, createTable()); }
+      | ^~
+bison.y:135.32-33: error: invalid characters: ‘$@’
+  135 | method_decl : all_types ID '(' $@1 params ')' block { 
+      |                                ^~
+bison.y:160.30-31: error: invalid characters: ‘$@’
+  160 |             all_types ID '(' $@1 ')' block { 
+      |                              ^~

@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include "bison.tab.h" // para los tokens
+#include "Stack.h"
+#include "Tree.h"
+#include "SymbolTable.h"
 
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
@@ -42,6 +45,11 @@ int yyparse(void);
 extern FILE *yyin;
 extern char *yytext;
 extern int yylex(void);
+extern int semantic_error;
+extern ScopeStack scope_Stack;
+extern Tree *ast_root;
+extern int had_error;
+extern int yydebug;
 
 void print_usage() {
     printf("Uso: c-tds [opcion] archivo.ctds\n");
@@ -58,7 +66,9 @@ int main(int argc, char **argv) {
     char *target = "parse";
     char *optimization = NULL;
     bool debug = false;
-
+    initScopeStack(&scope_Stack);
+    pushScope(&scope_Stack, createTable());
+    
     static struct option long_options[] = {
         {"debug",   no_argument,       0, 'd'},
         {"target",  required_argument, 0, 't'},
@@ -145,9 +155,31 @@ int main(int argc, char **argv) {
         }
     }
     else if (strcasecmp(target, "parse") == 0) {
+        if (debug) {
+            yydebug = 1;
+        }
         if (yyparse() == 0) {
-            fprintf(f, "Árbol sintáctico generado:\n");
-            fprintf(f, "Programa válido ✔️\n");
+            if (had_error || !ast_root) {
+                fprintf(stderr, "Se detectaron errores. No se ejecutará el AST.\n");
+                return 1;
+            }
+            printf("Árbol antes de ejecutar asignaciones:\n");
+            printTree(ast_root, 0);
+
+            // Chequeo semantico
+            check_scopes(ast_root);
+            check_types(ast_root);
+            
+            if (semantic_error) {
+                fprintf(stderr, "Error semántico\n");
+                return 2;
+            } else {
+                printf("\nSIN ERRORES SEMANTICOS\n");
+            }
+
+            
+
+            printSymbolTable(peekScope(&scope_Stack));
         } else {
             fprintf(stderr, "Error en el parseo ❌\n");
             fclose(f);

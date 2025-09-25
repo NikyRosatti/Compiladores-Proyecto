@@ -1,0 +1,19 @@
+Program {
+    integer cont(integer a, bool b) {
+        if (b == true) then {
+            a = a + 1;
+        }
+        return a;
+    }  
+
+    void main() {
+        integer y = get_int();
+        
+        if (y == 0) then {
+            print_int(1);
+        } else {
+            print_int(y + 1);
+        }
+        cont(true,17);
+    }
+}

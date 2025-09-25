@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include "Stack.h"
+
+TypeStack typeStack;
+
+void initTypeStack(TypeStack *s) {
+    s->top = -1;
+}
+
+void pushType(TypeStack *s, SymbolType t) {
+    if (s->top == 99) {
+        printf("Pila de tipos llena\n");
+        return;
+    }
+    s->arr[++s->top] = t;
+}
+
+SymbolType popType(TypeStack *s) {
+    if (s->top == -1) {
+        printf("Pila de tipos vacía\n");
+        return TYPE_VOID;
+    }
+    return s->arr[s->top--];
+}
+
+SymbolType peekType(TypeStack *s) {
+    if (s->top == -1) return TYPE_VOID;
+    return s->arr[s->top];
+}
+
+int isEmptyTypeStack(TypeStack *s) {
+    return s->top == -1;
+}
+
+void initScopeStack(ScopeStack *s) {
+    s->top = -1;
+}
+
+void pushScope(ScopeStack *s, SymbolTable *t) {
+    if (s->top == 99) {
+        printf("Pila de scopes llena\n");
+        return;
+    }
+    s->arr[++s->top] = t;
+}
+
+void popScope(ScopeStack *s) {
+    if (s->top == -1) {
+        printf("Pila de scopes vacía\n");
+        return;
+    }
+    s->top--;
+}
+
+SymbolTable* peekScope(ScopeStack *s) {
+    if (s->top == -1) return NULL;
+    return s->arr[s->top];
+}
+
+Symbol* lookupInScopes(ScopeStack *s, const char *name) {
+    if (s == NULL) return NULL;
+
+    for (int i = s->top; i >= 0; i--) {
+        Symbol *sym = lookupSymbol(s->arr[i], name);
+        if (sym != NULL) return sym;
+    }
+    return NULL;
+}
+
+
+const char* typeToStr(SymbolType t) {
+    switch (t) {
+        case TYPE_INT: return "int";
+        case TYPE_BOOL: return "bool";
+        case TYPE_VOID: return "void";
+        case TYPE_ERROR: return "error";
+        default: return "unknown";
+    }
+}
+
+const char* kindToStr(SymbolKind k) {
+    switch (k) {
+        case VAR: return "var";
+        case FUNC: return "func";
+        default: return "unknown";
+    }
+}
+
+void printScopeStack(ScopeStack *s) {
+    if (!s || s->top == -1) {
+        printf("ScopeStack vacío\n");
+        return;
+    }
+
+    printf("=== ScopeStack ===\n");
+    for (int i = s->top; i >= 0; i--) {
+        printf("Scope #%d:\n", i);
+
+        SymbolTable *table = s->arr[i];
+        if (!table || table->size == 0) {
+            printf("  (sin símbolos)\n");
+            continue;
+        }
+
+        for (int j = 0; j < table->size; j++) {
+            Symbol *sym = table->symbols[j];
+            printf("  - %s (%s, %s)\n",
+                   sym->name ? sym->name : "(anon)",
+                   kindToStr(sym->kind),
+                   typeToStr(sym->type));
+        }
+    }
+    printf("==================\n");
+}

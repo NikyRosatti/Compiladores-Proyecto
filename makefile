@@ -7,7 +7,7 @@ BISON=bison.y
 FLEX=flex.l
 CC=gcc
 TARGET=c-tds
-OBJS=bison.tab.c lex.yy.c main.c
+OBJS=bison.tab.c lex.yy.c main.c tree.c SymbolTable.c Stack.c Symbol.c
 FLFLAGS=-lfl
 CFLAGS=-Wall -Wextra -g
 # Target por defecto si no se pasa
@@ -15,11 +15,12 @@ VALID_TARGETS := scan parse codinter assembly
 
 
 # Carpeta de resultados
-RESULT_DIRS=resultados
+RESULT_DIRS=resultados/correct resultados/syntax resultados/semantic
 
 # Tests
 TESTS_CORRECT=$(wildcard tests/TestCorrect*.ctds)
-TESTS_FAIL=$(wildcard tests/TestFail*.ctds)
+TESTS_FAIL_SYNTAX=$(wildcard tests/TestSyntaxFail*.ctds)
+TESTS_FAIL_SEMANTIC=$(wildcard tests/TestSemanticFail*.ctds)
 
 # Colores
 GREEN=\033[0;32m
@@ -59,16 +60,17 @@ compile:
 # Función para ejecutar tests
 # =====================
 define run_test_loop
-	@mkdir -p resultados/$(1)
-	@echo "${YELLOW}>> Ejecutando tests $(1) con target $(TEST_TARGET)...${NC}"
+	@mkdir -p resultados/correct resultados/syntax resultados/semantic
+	@echo "${YELLOW}>> Ejecutando tests y clasificando resultados con target $(TEST_TARGET)...${NC}"
 	@for t in $(2); do \
 		base=$$(basename $$t .ctds); \
 		./$(TARGET) -t $(TEST_TARGET) $$t > resultados/$(1)/$$base.out 2>&1; \
 		code=$$?; \
-		if [ $$code -eq $(3) ]; then \
-			echo "${GREEN}✅ $$t OK${NC}"; \
+		exepted_code=$(3); \
+		if [ $$exepted_code -eq $$code ]; then \
+			echo "${GREEN}✅ $$t CORRECTO${NC}"; \
 		else \
-			echo "${RED}❌ $$t FAIL${NC}"; \
+			echo "${RED}❌ $$t FAIL ${NC}"; \
 		fi; \
 	done
 endef
@@ -76,13 +78,16 @@ endef
 # =====================
 # Ejecutar todos los tests (depende de compile)
 # =====================
-run_tests: check_target compile run_tests_correct run_tests_fail
+run_tests: check_target compile run_tests_correct run_tests_fail_syntax run_tests_fail_semantic
 
 run_tests_correct:
 	$(call run_test_loop,correct,$(TESTS_CORRECT),0)
 
-run_tests_fail:
-	$(call run_test_loop,fail,$(TESTS_FAIL),1)
+run_tests_fail_syntax:
+	$(call run_test_loop,syntax,$(TESTS_FAIL_SYNTAX),1)
+
+run_tests_fail_semantic:
+	$(call run_test_loop,semantic,$(TESTS_FAIL_SEMANTIC),2)
 
 # =====================
 # Limpiar binarios y resultados

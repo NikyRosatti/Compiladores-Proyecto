@@ -1,9 +1,9 @@
 Program
   {
-    integer inc(integer x)
-    {
+    integer inc(integer x) {
       return x + 1;
     }
+    
     integer get_int() extern;
 
     void print_int(integer i) extern ;
@@ -12,13 +12,10 @@ Program
     {
       integer y = 0;
       y = get_int();
-      if (y == 1) then
-          {
-            print_int(y);
-          }
-      else
-          {
-            return print_int(inc(y));
-          }
+      if (y == 1) then {
+        print_int(y);
+      } else {
+        return ;
+      }
   }
 }
