@@ -431,23 +431,21 @@ SymbolType check_types(Tree *node){
             }
 
         case NODE_DECLARATION: {
-        
-            // chequeo condicional y bloques
             SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
 
-            SymbolType init_type = TYPE_VOID;
-            if (node->right) {
-                init_type = check_types(node->right);
+            if (node->right) {  // solo chequea si hay inicialización
+                SymbolType init_type = check_types(node->right);
+                if (var_type != init_type) {
+                    printf("Error: declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)\n",
+                            node->sym ? node->sym->name : "?", var_type, init_type);
+                    semantic_error = 1;
+                    return TYPE_ERROR;
+                }
             }
-            if (var_type != init_type) {
-                printf("Error: declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)\n",
-                        node->sym ? node->sym->name : "?", var_type, init_type);
-                semantic_error = 1;
-                return TYPE_ERROR;
-            }
-
+            // si no hay inicialización, no pasa nada
             return var_type;
         }
+
         
         case NODE_ARGS:
             // chequeo de argumentos en llamadas
