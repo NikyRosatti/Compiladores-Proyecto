@@ -46,6 +46,7 @@ extern FILE *yyin;
 extern char *yytext;
 extern int yylex(void);
 extern int semantic_error;
+extern int main_decl;
 extern ScopeStack scope_Stack;
 extern Tree *ast_root;
 extern int had_error;
@@ -169,7 +170,12 @@ int main(int argc, char **argv) {
             // Chequeo semantico
             check_scopes(ast_root);
             check_types(ast_root);
-            
+
+            if (main_decl == 0) {
+                printf("Error semántico: no se encontro definido el metodo main");
+                return 2;
+            }
+        
             if (semantic_error) {
                 fprintf(stderr, "Error semántico\n");
                 return 2;

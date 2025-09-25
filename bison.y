@@ -77,7 +77,7 @@ void yyerror(const char *s) {
 %left '*' '/' '%'
 %right UMINUS '!'   /* operadores unarios */
 
-%type <node> program code var_decl method_decl params all_types block block_decl block_statement statement method_call args expr
+%type <node> program code var_decl method_decl params all_types block block_decl block_statement statement method_call args expr block_item
 %%
 program : PROGRAM '{' code '}'  {
                                     ast_root = $3;
@@ -147,10 +147,15 @@ block_decl : var_decl block_decl { $$ = createNode(NODE_LIST, 0, $1, $2); }
            | /* vacío */ { $$ = NULL; }
     ;
 
-block_statement : statement block_statement { $$ = createNode(NODE_LIST, 0, $1, $2); }
+block_statement : block_item block_statement { $$ = createNode(NODE_LIST, 0, $1, $2); }
                 | /* vacío */ { $$ = NULL; }
                 ;
     
+block_item
+    : statement
+    | var_decl
+    ;    
+
     /*sentencias*/
 statement : ID '=' expr ';' {
                 Symbol *s = createSymbolCall($1,VAR);
