@@ -1,0 +1,10 @@
+Program {
+
+    void inc(){}
+    
+    void main() {
+        inc();
+        int y;
+        return;
+    }
+}
