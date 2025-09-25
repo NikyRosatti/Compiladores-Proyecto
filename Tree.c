@@ -8,6 +8,7 @@
 
 struct Tree;  /* forward declaration */
 int semantic_error = 0;
+int main_decl = 0; // chequear la existencia del metodo main
 extern TypeStack typeStack;
 ScopeStack scope_Stack;  // pila global de scopes
 
@@ -311,6 +312,7 @@ SymbolType check_types(Tree *node){
         case NODE_METHOD: {
                 // push tipo del método en la pila
                 SymbolType t = node->sym->type;
+                if (strcmp(node->sym->name, "main") == 0) {main_decl = 1;} // Exactamente debe encontrar "main"
                 pushType(&typeStack, t);
                 check_types(node->right); // cuerpo del método
                 popType(&typeStack);
@@ -496,7 +498,13 @@ void check_scopes(Tree *node) {
         case NODE_METHOD:
             // Nuevo scope
             SymbolTable *current = peekScope(&scope_Stack);
-            Symbol *sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+            Symbol *sym; 
+            if (lookupSymbol(current, node->sym->name)) {
+                    printf("Error: redeclaración de metodo: '%s'\n", node->sym->name);
+                    semantic_error = 1;
+                } else {
+                    sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+                }
 
             if (sym) {
                 sym->node = node;
