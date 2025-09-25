@@ -1,0 +1,63 @@
+Program {
+    // Variables globales
+    integer g1 = 100;
+    bool gflag;
+
+    // Función externa
+    integer random(integer max) extern;
+
+    // Función que suma dos números
+    integer sum(integer a, integer b) {
+        integer result = a + b;
+        return result;
+    }
+
+    // Función void que imprime algo (simulada)
+    void printMessage() {
+        integer tmp = random(10);
+        if (tmp > 5) then {
+            // no hace nada
+        } else {
+            tmp = 0;
+        }
+        return;
+    }
+
+    integer main() {
+        integer x = 10;
+        integer y = 20;
+        bool flag = false;
+        integer total;
+
+        // Invocación de función con retorno
+        total = sum(x, y);
+
+        // Invocación de función void como sentencia
+        printMessage();
+
+        // Bloques anidados y shadowing
+        {
+            integer x = 50;     // oculta x externo
+            integer z = x + total;
+            if (z > 100) then {
+                flag = true;
+            } else {
+                flag = false;
+            }
+        }
+
+        // While con operadores lógicos y aritméticos
+        while (flag) {
+            x = x - 1;
+            if (x == 0) then {
+                flag = false;
+            }
+        }
+
+        // Expresiones combinadas
+        gflag = (x + total > 50) && !flag;
+
+        // Retorno de main
+        return x;
+    }
+}

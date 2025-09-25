@@ -437,7 +437,7 @@ SymbolType check_types(Tree *node){
             if (node->right) {
                 init_type = check_types(node->right);
             }
-            if (init_type != TYPE_VOID && var_type != init_type) {
+            if (var_type != init_type) {
                 printf("Error: declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)\n",
                         node->sym ? node->sym->name : "?", var_type, init_type);
                 semantic_error = 1;

@@ -1,11 +1,8 @@
 Program {
-    void inc(integer x) {
-        x = x + 1;
-    } 
-    
-
-    void main() {
-        x = 30;
-        return;
+    integer x = 5;
+    integer main() {
+        integer x = 10; // Correcto, shadowing permitido
+        integer x = 20; // ERROR: redeclaración en mismo scope
+        return x;
     }
 }
