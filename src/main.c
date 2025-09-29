@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <getopt.h>
-#include "bison.tab.h" // para los tokens
+#include "../build/bison.tab.h"
 #include "Stack.h"
 #include "Tree.h"
 #include "SymbolTable.h"
