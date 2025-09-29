@@ -161,6 +161,14 @@ void execute(Tree *node) {
     }
 }
 
+int has_return(Tree *n) {
+                    if (!n) return 0;                 // nodo nulo
+                    if (n->tipo == NODE_RETURN )       // encontramos un return
+                        return 1;
+                    // buscar en left y right recursivamente
+                    return has_return(n->left) || has_return(n->right);
+                } 
+
 SymbolType check_types(Tree *node){
     if (!node) return TYPE_VOID;  // nodo vacío siempre error
 
@@ -316,7 +324,18 @@ SymbolType check_types(Tree *node){
                 pushType(&typeStack, t);
                 check_types(node->right); // cuerpo del método
                 popType(&typeStack);
-                return TYPE_VOID;
+                    
+                if (!node->right )
+                {
+                    return TYPE_VOID;
+                }  else {
+                    if (!has_return(node)) {
+                        printf("Error: el método '%s' debe tener una sentencia return\n", node->sym->name);
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                    return TYPE_VOID;
+                }
             }   
 
         case NODE_METHOD_CALL: {
@@ -581,3 +600,4 @@ void check_scopes(Tree *node) {
             break;
     }
 }
+
