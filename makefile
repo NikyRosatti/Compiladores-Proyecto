@@ -78,6 +78,7 @@ $(BUILD_DIR)/lex.yy.c: $(FLEX)
 # Ejecutar todos los tests (depende de compile)
 # =====================
 run_tests: check_target compile
+	@dos2unix scriptTest.sh
 	@./scriptTest.sh $(TEST_TARGET)
 
 # =====================

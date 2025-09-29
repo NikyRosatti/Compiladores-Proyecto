@@ -22,6 +22,12 @@ similar a C/Pascal, en el marco de la materia **Taller de Diseño de Software (3
 
 ---
 
+## 📍 Requisitos previos 
+Para normalizar el formato de los saltos de linea en scriptTest.sh
+```bash
+sudo apt-get install dos2unix
+```
+
 ## ⚙️ Compilación
 Para compilar se requiere tener instalados **flex** y **bison** en el sistema.
 
