@@ -34,7 +34,8 @@ for i in "${!TEST_DIRS[@]}"; do
     for f in $TEST_DIR/*.ctds; do
         total=$((total+1))
         base=$(basename $f .ctds)
-        ./c-tds -t $TARGET $f > $RES_DIR/$base.out 2>&1
+        ./bin/c-tds -t $TARGET $f > $RES_DIR/$base.out 2>&1
+
         code=$?
 
         case $i in
