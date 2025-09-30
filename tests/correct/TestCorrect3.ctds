@@ -9,5 +9,6 @@ Program
         y = y + 1;
       }
       print_int(y);
+      return;
   }
 }

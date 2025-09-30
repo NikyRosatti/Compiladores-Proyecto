@@ -26,10 +26,10 @@
 #include "Stack.h"
 #include "Tree.h"
 #include "SymbolTable.h"
+#include "Error.h"
 
 extern FILE *yyin;
 extern int yylineno;
-extern int semantic_error;
 
 ScopeStack scope_stack;
 Tree *ast_root;
@@ -37,16 +37,6 @@ Tree *ast_root;
 int had_error = 0;
 
 int yylex(void);
-
-
-void yyerror(const char *s) {
-    extern int yylineno;
-    extern char *yytext;
-    fprintf(stderr, "-> ERROR Sintáctico en la línea %d: %s. Token actual: '%s'\n", yylineno, s, yytext ? yytext : "<NULL>");
-    had_error = 1;
-}
-
-
 
 %}
 
@@ -90,14 +80,24 @@ code: var_decl code { $$ = createNode(NODE_CODE, NULL,$1, $2); }
     ;
 
 var_decl: all_types ID '=' expr ';' {
-            Valores v = {0};
-            Symbol *s = createSymbol($2,$1,VAR,v);
-            $$ = createNode(NODE_DECLARATION, s, $1, $4);
+            if ($1->tipo == NODE_T_VOID) {
+                yyerrorf(yylineno,"No se puede declarar variable '%s' de tipo void");
+                $$ = NULL;  // opcional: seguir parseando
+            } else {
+                Valores v = {0};
+                Symbol *s = createSymbol($2,$1,VAR,v);
+                $$ = createNode(NODE_DECLARATION, s, $1, $4);
+            }
         }
         | all_types ID ';' { 
-            Valores v = {0};
-            Symbol *s = createSymbol($2,$1,VAR,v);
-            $$ = createNode(NODE_DECLARATION, s, $1, NULL);
+            if ($1->tipo == NODE_T_VOID) {
+                yyerrorf(yylineno,"No se puede declarar variable '%s' de tipo void",$2);
+                $$ = NULL;
+            } else {
+                Valores v = {0};
+                Symbol *s = createSymbol($2,$1,VAR,v);
+                $$ = createNode(NODE_DECLARATION, s, $1, NULL);
+            }
         }
         ;
 
@@ -120,18 +120,29 @@ method_decl : all_types ID '(' params ')' block {
 
 
 params  : all_types ID ',' params {
-            Valores v = {0};
-            Symbol *s = createSymbol($2,$1,VAR,v);
-            $$ = createNode(NODE_LIST, 0, createNode(NODE_DECLARATION, s, $1, NULL), $4);
+            if ($1->tipo == NODE_T_VOID) {
+                yyerrorf(yylineno,"No se puede declarar parámetro '%s' de tipo void", $2);
+                $$ = $4;  // ignoramos este parámetro y seguimos
+            } else {
+                Valores v = {0};
+                Symbol *s = createSymbol($2,$1,VAR,v);
+                $$ = createNode(NODE_LIST, 0, createNode(NODE_DECLARATION, s, $1, NULL), $4);
+            }
         }
         | all_types ID  { 
-            Valores v = {0};
-            Symbol *s = createSymbol($2,$1,VAR,v);
-            Tree *decl = createNode(NODE_DECLARATION, s, $1, NULL);
-            $$ = createNode(NODE_LIST, 0, decl, NULL);
+            if ($1->tipo == NODE_T_VOID) {
+                yyerrorf(yylineno,"No se puede declarar parámetro '%s' de tipo void", $2);
+                $$ = NULL;
+            } else {
+                Valores v = {0};
+                Symbol *s = createSymbol($2,$1,VAR,v);
+                Tree *decl = createNode(NODE_DECLARATION, s, $1, NULL);
+                $$ = createNode(NODE_LIST, 0, decl, NULL);
+            }
         }
         | /* vacío */ { $$ = NULL; }
         ;
+
 
 all_types   : T_INT { $$ = createNode(NODE_T_INT, 0, NULL, NULL); }
             | T_BOOL { $$ = createNode(NODE_T_BOOL, 0, NULL, NULL); }

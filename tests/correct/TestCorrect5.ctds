@@ -10,5 +10,6 @@ Program {
         } else {
             print_int(y + 1);
         }
+        return;
     }
 }
