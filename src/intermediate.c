@@ -291,7 +291,12 @@ void ir_emit(IRList *list, IRInstr op, char *arg1, char *arg2, char *result) {
 void ir_print(IRList *list) {
     for (int i = 0; i < list->size; i++) {
         IRCode *code = &list->codes[i];
-        printf("%s", ir_names[code->op]);
+        if (ir_names[code->op] == "METH_EXT")
+        {
+            printf("EXTERN");    
+        } else {
+            printf("%s", ir_names[code->op]);
+        }
 
         switch (code->op)
         {
@@ -316,17 +321,28 @@ void ir_print(IRList *list) {
         case IR_LOAD:
         case IR_CALL:
         case IR_NOT:
-            printf(" %s", code->arg1);
-            printf(", %s", code->result);
-            break;
+            if (code->arg1) printf(" %s", code->arg1);
+            if (code->arg1) {
+                printf(", %s", code->result);
+            } else
+            {
+                printf("%s", code->result);
+            }
+            
+                break;
         case IR_LABEL:
+        case IR_METH_EXT:
             printf(" %s", code->result);
             break;
+
+
         case IR_GOTO:
         case IR_IFZ:
         case IR_RETURN:
         case IR_PARAM:
         case IR_PRINT:
+
+
             /* code */
             break;
         
