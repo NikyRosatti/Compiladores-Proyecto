@@ -8,7 +8,7 @@ static const char *ir_names[] = {
     "LOAD","STORE","ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RETURN", "PARAM", "CALL", "METH_EXT", "PRINT"
+    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "METH_EXT", "PRINT"
 };
 
 static int tempCount = 0;
@@ -234,7 +234,7 @@ Symbol* gen_code(Tree *node, IRList *list) {
             } else {
                 // Etiqueta para inicio del método
                 if (node->sym && node->sym) {
-                    ir_emit(list, IR_LABEL, NULL, NULL, node->sym);
+                    ir_emit(list, IR_METHOD, NULL, NULL, node->sym);
                 }
             }
             // Cuerpo del método
@@ -271,6 +271,7 @@ Symbol* gen_code(Tree *node, IRList *list) {
                 ir_emit(list, IR_RETURN, l, NULL, NULL);
                 return NULL;
             }
+            ir_emit(list, IR_RETURN, NULL, NULL, NULL);
             break;
         }
 
@@ -338,88 +339,93 @@ void ir_print(IRList *list) {
             printf("%s", ir_names[code->op]);
         }
 
-        switch (code->op)
-        {
-        
-        case IR_ADD:
-        case IR_SUB:
-        case IR_MUL:
-        case IR_DIV:
-        case IR_MOD:
-        case IR_AND:
-        case IR_OR:
-        case IR_EQ:
-        case IR_NEQ:
-        case IR_LT:
-        case IR_LE:
-        case IR_GT:
-        case IR_GE:
-            if (code->arg1) {
-                if (code->arg1->name)
+        switch (code->op){
+            
+            case IR_ADD:
+            case IR_SUB:
+            case IR_MUL:
+            case IR_DIV:
+            case IR_MOD:
+            case IR_AND:
+            case IR_OR:
+            case IR_EQ:
+            case IR_NEQ:
+            case IR_LT:
+            case IR_LE:
+            case IR_GT:
+            case IR_GE:
+                if (code->arg1) {
+                    if (code->arg1->name)
+                        printf(" %s", code->arg1->name);
+                    else
+                        printf(" %d", code->arg1->valor.value);
+                }
+                if (code->arg2) {
+                    if (code->arg2->name)
+                        printf(", %s", code->arg2->name);
+                    else
+                        printf(", %d", code->arg2->valor.value);
+                }
+                if (code->result) {
+                    if (code->result->name)
+                        printf(", %s", code->result->name);
+                    else
+                        printf(", %d", code->result->valor.value);
+                }
+                break;
+            case IR_STORE:
+            case IR_LOAD:
+            case IR_CALL:
+            case IR_NOT:
+            case IR_UMINUS:
+            case IR_IF:
+            case IR_GOTO:
+                if (code->arg1) {
+                    if (code->arg1->name)
+                        printf(" %s", code->arg1->name);
+                    else
+                        printf(" %d", code->arg1->valor.value);
+                }
+                if (code->arg2) {
+                    if (code->arg2->name)
+                        printf(", %s", code->arg2->name);
+                    else
+                        printf(", %d", code->arg2->valor.value);
+                }
+                if (code->result) {
+                    if (code->result->name)
+                        printf(", %s", code->result->name);
+                    else
+                        printf(", %d", code->result->valor.value);
+                }
+                break;
+            case IR_LABEL:
+            case IR_METH_EXT:
+                printf(" %s", code->result->name);
+                break;
+
+            case IR_METHOD:
+                printf(": %s", code->result->name);
+                break;
+
+            case IR_RETURN:
+                if (code->arg1) {
                     printf(" %s", code->arg1->name);
-                else
-                    printf(" %d", code->arg1->valor.value);
-            }
-            if (code->arg2) {
-                if (code->arg2->name)
-                    printf(", %s", code->arg2->name);
-                else
-                    printf(", %d", code->arg2->valor.value);
-            }
-            if (code->result) {
-                if (code->result->name)
-                    printf(", %s", code->result->name);
-                else
-                    printf(", %d", code->result->valor.value);
-            }
-            break;
-        case IR_STORE:
-        case IR_LOAD:
-        case IR_CALL:
-        case IR_NOT:
-        case IR_UMINUS:
-        case IR_IF:
-        case IR_GOTO:
-            if (code->arg1) {
-                if (code->arg1->name)
-                    printf(" %s", code->arg1->name);
-                else
-                    printf(" %d", code->arg1->valor.value);
-            }
-            if (code->arg2) {
-                if (code->arg2->name)
-                    printf(", %s", code->arg2->name);
-                else
-                    printf(", %d", code->arg2->valor.value);
-            }
-            if (code->result) {
-                if (code->result->name)
-                    printf(", %s", code->result->name);
-                else
-                    printf(", %d", code->result->valor.value);
-            }
-            break;
-        case IR_LABEL:
-        case IR_METH_EXT:
-            printf(" %s", code->result->name);
-            break;
-
-        case IR_RETURN:
-            printf(" %s", code->arg1->name);
-            break;
-        case IR_PARAM:
-        case IR_PRINT:
+                }
+                break;
+            
+            case IR_PARAM:
+            case IR_PRINT:
 
 
-            /* code */
-            break;
-        
-        default:
-            printf("CASO DEFAULT");
-            break;
+                /* code */
+                break;
+            
+            default:
+                printf("CASO DEFAULT");
+                break;
         }
         printf("\n");
-
     }
 }
 
