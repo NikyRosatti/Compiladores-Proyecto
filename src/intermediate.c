@@ -265,6 +265,18 @@ char* gen_code(Tree *node, IRList *list) {
             break;
         }
 
+        case NODE_WHILE: {
+            char *label_start = newLAbel();
+            char *label_end = newLAbel();
+            ir_emit(list, IR_LABEL, NULL, NULL, label_start);
+            char *cond = gen_code(node->left, list);
+            ir_emit(list, IR_GOTO, cond, NULL, label_end);
+            gen_code(node->right, list);
+            ir_emit(list, IR_GOTO, NULL, NULL, label_start);
+            ir_emit(list, IR_LABEL, NULL, NULL, label_end);
+            break;
+        }
+
         case NODE_PARENS: return gen_code(node->left, list);
 
 
@@ -310,12 +322,66 @@ void ir_emit(IRList *list, IRInstr op, char *arg1, char *arg2, char *result) {
 void ir_print(IRList *list) {
     for (int i = 0; i < list->size; i++) {
         IRCode *code = &list->codes[i];
-        printf("%s", ir_names[code->op]);
+        if (ir_names[code->op] == "METH_EXT")
+        {
+            printf("EXTERN");    
+        } else {
+            printf("%s", ir_names[code->op]);
+        }
 
-        if (code->arg1)  printf(" %s", code->arg1);
-        if (code->arg2)  printf(", %s", code->arg2);
-        if (code->result) printf(", %s", code->result);
+        switch (code->op)
+        {
+        case IR_ADD:
+        case IR_SUB:
+        case IR_MUL:
+        case IR_DIV:
+        case IR_MOD:
+        case IR_AND:
+        case IR_OR:
+        case IR_EQ:
+        case IR_NEQ:
+        case IR_LT:
+        case IR_LE:
+        case IR_GT:
+        case IR_GE:
+            printf(" %s", code->arg1);
+            printf(", %s", code->arg2);
+            printf(", %s", code->result);
+            break;
+        case IR_STORE:
+        case IR_LOAD:
+        case IR_CALL:
+        case IR_NOT:
+        case IR_IF:
+        case IR_GOTO:
+            if (code->arg1) printf(" %s", code->arg1);
+            if (code->arg1) {
+                printf(", %s", code->result);
+            } else
+            {
+                printf(" %s", code->result);
+            }
+            
+                break;
+        case IR_LABEL:
+        //case IR_METH_EXT:
+            printf(" %s", code->result);
+            break;
 
+
+
+        case IR_RETURN:
+        case IR_PARAM:
+        case IR_PRINT:
+
+
+            /* code */
+            break;
+        
+        default:
+            printf("CASO DEFAULT");
+            break;
+        }
         printf("\n");
 
     }
