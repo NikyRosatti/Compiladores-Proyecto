@@ -293,10 +293,47 @@ void ir_print(IRList *list) {
         IRCode *code = &list->codes[i];
         printf("%s", ir_names[code->op]);
 
-        if (code->arg1)  printf(" %s", code->arg1);
-        if (code->arg2)  printf(", %s", code->arg2);
-        if (code->result) printf(", %s", code->result);
-
+        switch (code->op)
+        {
+        case IR_ADD:
+        case IR_SUB:
+        case IR_MUL:
+        case IR_DIV:
+        case IR_MOD:
+        case IR_AND:
+        case IR_OR:
+        case IR_EQ:
+        case IR_NEQ:
+        case IR_LT:
+        case IR_LE:
+        case IR_GT:
+        case IR_GE:
+            printf(" %s", code->arg1);
+            printf(", %s", code->arg2);
+            printf(", %s", code->result);
+            break;
+        case IR_STORE:
+        case IR_LOAD:
+        case IR_CALL:
+        case IR_NOT:
+            printf(" %s", code->arg1);
+            printf(", %s", code->result);
+            break;
+        case IR_LABEL:
+            printf(" %s", code->result);
+            break;
+        case IR_GOTO:
+        case IR_IFZ:
+        case IR_RETURN:
+        case IR_PARAM:
+        case IR_PRINT:
+            /* code */
+            break;
+        
+        default:
+            printf("CASO DEFAULT");
+            break;
+        }
         printf("\n");
 
     }
