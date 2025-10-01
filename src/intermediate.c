@@ -229,7 +229,7 @@ char* gen_code(Tree *node, IRList *list) {
 
         case NODE_IF: {
             char *cond = gen_code(node->left, list); // condición
-            char *label_end = "hola";//newLabel();
+            char *label_end = newLAbel();
             ir_emit(list, IR_IFZ, cond, NULL, label_end);
             gen_code(node->right, list); // cuerpo del if
             ir_emit(list, IR_LABEL, NULL, NULL, label_end);
@@ -243,6 +243,18 @@ char* gen_code(Tree *node, IRList *list) {
                 ir_emit(list, IR_PRINT, l, NULL, NULL);
                 return NULL;
             }
+            break;
+        }
+
+        case NODE_WHILE: {
+            char *label_start = newLAbel();
+            char *label_end = newLAbel();
+            ir_emit(list, IR_LABEL, NULL, NULL, label_start);
+            char *cond = gen_code(node->left, list);
+            ir_emit(list, IR_GOTO, cond, NULL, label_end);
+            gen_code(node->right, list);
+            ir_emit(list, IR_GOTO, NULL, NULL, label_start);
+            ir_emit(list, IR_LABEL, NULL, NULL, label_end);
             break;
         }
 
@@ -321,23 +333,24 @@ void ir_print(IRList *list) {
         case IR_LOAD:
         case IR_CALL:
         case IR_NOT:
+        case IR_IFZ:
+        case IR_GOTO:
             if (code->arg1) printf(" %s", code->arg1);
             if (code->arg1) {
                 printf(", %s", code->result);
             } else
             {
-                printf("%s", code->result);
+                printf(" %s", code->result);
             }
             
                 break;
         case IR_LABEL:
-        case IR_METH_EXT:
+        //case IR_METH_EXT:
             printf(" %s", code->result);
             break;
 
 
-        case IR_GOTO:
-        case IR_IFZ:
+
         case IR_RETURN:
         case IR_PARAM:
         case IR_PRINT:
