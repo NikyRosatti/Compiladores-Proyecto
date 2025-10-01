@@ -206,6 +206,7 @@ char* gen_code(Tree *node, IRList *list) {
             // Generar args
             char *args = gen_code(node->right, list);
             ir_emit(list, IR_CALL, node->sym->name, args, newTemp());
+            break;
         }
 
         case NODE_PROGRAM:
@@ -266,8 +267,8 @@ char* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_WHILE: {
-            char *label_start = newLAbel();
-            char *label_end = newLAbel();
+            char *label_start = newLabel();
+            char *label_end = newLabel();
             ir_emit(list, IR_LABEL, NULL, NULL, label_start);
             char *cond = gen_code(node->left, list);
             ir_emit(list, IR_GOTO, cond, NULL, label_end);
@@ -322,7 +323,7 @@ void ir_emit(IRList *list, IRInstr op, char *arg1, char *arg2, char *result) {
 void ir_print(IRList *list) {
     for (int i = 0; i < list->size; i++) {
         IRCode *code = &list->codes[i];
-        if (ir_names[code->op] == "METH_EXT")
+        if (strcmp(ir_names[code->op], "METH_EXT") == 0)
         {
             printf("EXTERN");    
         } else {
