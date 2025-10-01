@@ -9,7 +9,7 @@
 #include "Stack.h"
 #include "Tree.h"
 #include "SymbolTable.h"
-#include "CodeGen.h"
+#include "intermediate.h"
 
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
@@ -184,9 +184,10 @@ int main(int argc, char **argv) {
                 printf("\nSIN ERRORES SEMANTICOS\n");
             }
 
-            // Primero declaramos los métodos externos
-            declareExternals(ast_root, 0);
-            genCode(ast_root, 0);
+            IRList list;
+            ir_init(&list);
+            gen_code(ast_root, &list); //para hacer el codigo intermedio
+            ir_print(&list);
 
             //printSymbolTable(peekScope(&scope_Stack));
         } else {

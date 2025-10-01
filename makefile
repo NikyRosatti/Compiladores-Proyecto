@@ -23,7 +23,7 @@ OBJS=$(BUILD_DIR)/bison.tab.c \
      $(SRC_DIR)/SymbolTable.c \
      $(SRC_DIR)/Stack.c \
      $(SRC_DIR)/Symbol.c \
-	 $(SRC_DIR)/CodeGen.c
+	 $(SRC_DIR)/intermediate.c
 
 VALID_TARGETS := scan parse codinter assembly
 
