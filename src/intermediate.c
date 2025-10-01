@@ -257,9 +257,10 @@ Symbol* gen_code(Tree *node, IRList *list) {
             Symbol *label_else = newLabel();
             Symbol *label_end = newLabel();
             ir_emit(list, IR_GOTO, cond, NULL, label_else);
-            gen_code(node->right, list); // cuerpo del if
+            gen_code(node->right->left, list); // cuerpo del if (then)
             ir_emit(list, IR_GOTO, NULL, NULL, label_end);
             ir_emit(list, IR_LABEL, NULL, NULL, label_else);
+            gen_code(node->right->right, list); // cuerpo del else
             ir_emit(list, IR_LABEL, NULL, NULL, label_end);
             break;
         }
