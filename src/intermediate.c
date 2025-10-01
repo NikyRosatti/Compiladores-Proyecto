@@ -6,10 +6,11 @@ static const char *ir_names[] = {
     "LOAD","STORE","ADD","SUB","MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO","IFZ","RETURN","PARAM","CALL", "PRINT"
+    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RETURN", "PARAM", "CALL", "METH_EXT", "PRINT"
 };
 
 static int tempCount = 0;
+static int labelCount = 0;
 
 char* newTemp() {
     char *buf = malloc(16);
@@ -17,9 +18,9 @@ char* newTemp() {
     return buf;
 }
 
-char* newLAbel() {
+char* newLabel() {
     char *buf = malloc(16);
-    sprintf(buf, "L%d", tempCount++);
+    sprintf(buf, "L%d", labelCount++);
     return buf;
 }
 
@@ -218,9 +219,14 @@ char* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_METHOD: {
-            // Etiqueta para inicio del método
-            if (node->sym && node->sym->name) {
-                ir_emit(list, IR_LABEL, NULL, NULL, node->sym->name);
+            // ES UN METODO EXTERNO
+            if (node->right == NULL) {
+                ir_emit(list, IR_METH_EXT, NULL, NULL, node->sym->name);
+            } else {
+                // Etiqueta para inicio del método
+                if (node->sym && node->sym->name) {
+                    ir_emit(list, IR_LABEL, NULL, NULL, node->sym->name);
+                }
             }
             // Cuerpo del método
             gen_code(node->right, list);
@@ -229,9 +235,22 @@ char* gen_code(Tree *node, IRList *list) {
 
         case NODE_IF: {
             char *cond = gen_code(node->left, list); // condición
-            char *label_end = "hola";//newLabel();
-            ir_emit(list, IR_IFZ, cond, NULL, label_end);
+            char *label_end = newLabel();
+            //GOTO SALTA SI ES FALSO, SINO CONTINUA LA EJECUCION SECUENCIAL//
+            ir_emit(list, IR_GOTO, cond, NULL, label_end);
             gen_code(node->right, list); // cuerpo del if
+            ir_emit(list, IR_LABEL, NULL, NULL, label_end);
+            break;
+        }
+
+        case NODE_IF_ELSE: {
+            char *cond = gen_code(node->left, list); // condición
+            char *label_else = newLabel();
+            char *label_end = newLabel();
+            ir_emit(list, IR_GOTO, cond, NULL, label_else);
+            gen_code(node->right, list); // cuerpo del if
+            ir_emit(list, IR_GOTO, NULL, NULL, label_end);
+            ir_emit(list, IR_LABEL, NULL, NULL, label_else);
             ir_emit(list, IR_LABEL, NULL, NULL, label_end);
             break;
         }
