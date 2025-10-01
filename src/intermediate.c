@@ -261,7 +261,7 @@ char* gen_code(Tree *node, IRList *list) {
             // no es un return void
             if (node->left != NULL){
                 char *l = gen_code(node->left, list);
-                ir_emit(list, IR_PRINT, l, NULL, NULL);
+                ir_emit(list, IR_RETURN, l, NULL, NULL);
                 return NULL;
             }
             break;
@@ -373,6 +373,8 @@ void ir_print(IRList *list) {
 
 
         case IR_RETURN:
+            printf(" %s", code->arg1);
+            break;
         case IR_PARAM:
         case IR_PRINT:
 
