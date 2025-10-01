@@ -266,8 +266,8 @@ char* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_WHILE: {
-            char *label_start = newLAbel();
-            char *label_end = newLAbel();
+            char *label_start = newLabel();
+            char *label_end = newLabel();
             ir_emit(list, IR_LABEL, NULL, NULL, label_start);
             char *cond = gen_code(node->left, list);
             ir_emit(list, IR_GOTO, cond, NULL, label_end);
