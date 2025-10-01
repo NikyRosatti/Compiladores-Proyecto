@@ -205,8 +205,9 @@ char* gen_code(Tree *node, IRList *list) {
         case NODE_METHOD_CALL: {
             // Generar args
             char *args = gen_code(node->right, list);
-            ir_emit(list, IR_CALL, node->sym->name, args, newTemp());
-            break;
+            char *t = newTemp();
+            ir_emit(list, IR_CALL, node->sym->name, args, t);
+            return t;
         }
 
         case NODE_PROGRAM:
@@ -365,7 +366,7 @@ void ir_print(IRList *list) {
             
                 break;
         case IR_LABEL:
-        //case IR_METH_EXT:
+        case IR_METH_EXT:
             printf(" %s", code->result);
             break;
 
