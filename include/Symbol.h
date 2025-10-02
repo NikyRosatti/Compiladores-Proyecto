@@ -17,7 +17,8 @@ typedef enum {
     TYPE_INT,
     TYPE_BOOL,
     TYPE_VOID,
-    TYPE_ERROR
+    TYPE_ERROR,
+    TYPE_LABEL
 } SymbolType;
 
 typedef struct Symbol {

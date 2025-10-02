@@ -9,6 +9,8 @@
 #include "Stack.h"
 #include "Tree.h"
 #include "SymbolTable.h"
+#include "intermediate.h"
+
 #include "Error.h"
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
@@ -155,7 +157,7 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    else if (strcasecmp(target, "parse") == 0) {
+    else if (strcasecmp(target, "parse") == 0 || strcasecmp(target, "codinter") == 0) {
         if (debug) {
             yydebug = 1;
         }
@@ -164,9 +166,11 @@ int main(int argc, char **argv) {
                 fprintf(stderr, "Se detectaron errores. No se ejecutará el AST.\n");
                 return 1;
             }
-            printf("Árbol antes de ejecutar asignaciones:\n");
-            printTree(ast_root, 0);
-            fflush(stdout);
+            if (strcasecmp(target, "parse") == 0) {
+                printf("Árbol antes de ejecutar asignaciones:\n");
+                printTree(ast_root, 0);
+                fflush(stdout);
+            }
             // Chequeo semantico
             check_scopes(ast_root);
             check_types(ast_root);
@@ -179,23 +183,22 @@ int main(int argc, char **argv) {
             if (semantic_error) {
                 fprintf(stderr, "Error semántico\n");
                 return 2;
-            } else {
-                printf("\nSIN ERRORES SEMANTICOS\n");
             }
 
-            
-
-            printSymbolTable(peekScope(&scope_Stack));
+            if (strcasecmp(target, "codinter") == 0) {
+                IRList list;
+                ir_init(&list);
+                gen_code(ast_root, &list); //para hacer el codigo intermedio
+                ir_print(&list);
+            } else {
+                printSymbolTable(peekScope(&scope_Stack));
+            }
         } else {
             fprintf(stderr, "Error en el parseo ❌\n");
             fclose(f);
             fclose(yyin);
             return 1;
         }
-    }
-    else if (strcasecmp(target, "codinter") == 0) {
-        fprintf(f, "Código intermedio generado (simulado)\n");
-        fprintf(f, "t1 = ...\n");
     }
     else if (strcasecmp(target, "assembly") == 0) {
         fprintf(f, "Código ensamblador generado (simulado)\n");
