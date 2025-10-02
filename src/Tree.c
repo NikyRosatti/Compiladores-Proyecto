@@ -4,10 +4,10 @@
 #include "Tree.h"
 #include "Symbol.h" 
 #include "Stack.h"  
+#include "Error.h"
 
-
+extern int semantic_error;   // variable global
 struct Tree;  /* forward declaration */
-int semantic_error = 0;
 int main_decl = 0; // chequear la existencia del metodo main
 extern TypeStack typeStack;
 ScopeStack scope_Stack;  // pila global de scopes
@@ -19,6 +19,7 @@ Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     n->sym = sym;
     n->left = left;
     n->right = right;
+    n->lineno = yylineno;  // Asignar el número de línea actual
     return n;
 }
 
@@ -161,6 +162,14 @@ void execute(Tree *node) {
     }
 }
 
+int has_return(Tree *n) {
+                    if (!n) return 0;                 // nodo nulo
+                    if (n->tipo == NODE_RETURN )       // encontramos un return
+                        return 1;
+                    // buscar en left y right recursivamente
+                    return has_return(n->left) || has_return(n->right);
+                } 
+
 SymbolType check_types(Tree *node){
     if (!node) return TYPE_VOID;  // nodo vacío siempre error
 
@@ -183,7 +192,8 @@ SymbolType check_types(Tree *node){
                 SymbolType var_type = node->sym ? node->sym->type : TYPE_ERROR;
                 SymbolType expr_type = check_types(node->left);
                 if (var_type != expr_type) {
-                    printf("Error: asignación incompatible\n");
+                    yyerrorf(node->lineno,"Asignación incompatible en variable '%s' (esperado %d, encontrado %d)",
+                 node->sym ? node->sym->name : "?", var_type, expr_type);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -196,7 +206,7 @@ SymbolType check_types(Tree *node){
                 SymbolType left = check_types(node->left);
                 SymbolType right = check_types(node->right);
                 if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador aritmético espera enteros\n");
+                    yyerrorf(node->lineno, "Operador aritmético espera enteros (encontrado %d y %d)", left, right);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -207,10 +217,11 @@ SymbolType check_types(Tree *node){
                 SymbolType left = check_types(node->left);
                 SymbolType right = check_types(node->right);
                 if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador aritmético espera enteros\n");
+                    yyerrorf(node->lineno,"Operador aritmético espera enteros (encontrado %d y %d)", left, right);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 } else if(evaluate(node->right) == 0) {
+                    yyerrorf(node->lineno,"División o módulo por cero");
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -224,7 +235,7 @@ SymbolType check_types(Tree *node){
                 SymbolType left = check_types(node->left);
                 SymbolType right = check_types(node->right);
                 if (left != TYPE_INT || right != TYPE_INT) {
-                    printf("Error: operador relacional espera enteros\n");
+                    yyerrorf(node->lineno,"Operador relacional espera enteros (encontrado %d y %d)", left, right);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -236,7 +247,7 @@ SymbolType check_types(Tree *node){
             SymbolType left = check_types(node->left);
             SymbolType right = check_types(node->right);
             if (left != right) {
-                printf("Error: comparación de tipos incompatibles\n");
+                yyerrorf(node->lineno,"Comparación de tipos incompatibles (%d != %d)", left, right);
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
@@ -248,7 +259,7 @@ SymbolType check_types(Tree *node){
                 SymbolType left = check_types(node->left);
                 SymbolType right = check_types(node->right);
                 if (left != TYPE_BOOL || right != TYPE_BOOL) {
-                    printf("Error: operador lógico espera booleanos\n");
+                    yyerrorf(node->lineno,"Operador lógico espera booleanos (encontrado %d y %d)", left, right);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -302,7 +313,7 @@ SymbolType check_types(Tree *node){
                 SymbolType expected = peekType(&typeStack);
                 SymbolType got = node->left ? check_types(node->left) : TYPE_VOID;
                 if (expected != got) {
-                    printf("Error semántico: return de tipo %d, esperado %d\n", got, expected);
+                    yyerrorf(node->lineno,"Return de tipo %d, esperado %d", got, expected);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -316,20 +327,30 @@ SymbolType check_types(Tree *node){
                 pushType(&typeStack, t);
                 check_types(node->right); // cuerpo del método
                 popType(&typeStack);
-                return TYPE_VOID;
+                    
+                if (!node->right )
+                {
+                    return TYPE_VOID;
+                }  else {
+                    if (!has_return(node)) {
+                        yyerrorf(node->lineno,"El método '%s' debe tener una sentencia return", node->sym->name);
+                        semantic_error = 1;
+                        return TYPE_ERROR;
+                    }
+                    return TYPE_VOID;
+                }
             }   
 
         case NODE_METHOD_CALL: {
             Symbol *method_sym = node->left->sym;
             if (!method_sym) {
-                printf("Error: llamada a método no declarada\n");
+                yyerrorf(node->lineno,"Llamada a método no declarada");
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
 
             if ( !method_sym->node) {
-                printf("Error: símbolo de método '%s' no tiene nodo asociado\n",
-                    method_sym ? method_sym->name : "(desconocido)");
+                yyerrorf(node->lineno,"Símbolo de método '%s' no tiene nodo asociado", method_sym->name);
                 semantic_error = 1;
                 return TYPE_ERROR;  // o lo que uses como valor de error
             }
@@ -363,7 +384,7 @@ SymbolType check_types(Tree *node){
                 }
 
                 if (t_decl != t_call) {
-                    printf("Error: parámetros con tipos distintos\n");
+                    yyerrorf(node->lineno,"Parámetros con tipos distintos en llamada a '%s'", method_sym->name);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -374,7 +395,7 @@ SymbolType check_types(Tree *node){
 
             // Si alguna lista todavía tiene elementos -> error de cantidad
             if (d || c) {
-                printf("Error: cantidad de parámetros distintas\n");
+                yyerrorf(node->lineno,"Cantidad de parámetros distinta en llamada a '%s'", method_sym->name);
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
@@ -387,7 +408,7 @@ SymbolType check_types(Tree *node){
         case NODE_UMINUS: {
                 SymbolType expr_type = check_types(node->left);
                 if (expr_type != TYPE_INT) {
-                    printf("Error: operador unario menos espera entero\n");
+                    yyerrorf(node->lineno,"Operador unario menos espera entero (encontrado %d)", expr_type);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -397,7 +418,7 @@ SymbolType check_types(Tree *node){
         case NODE_IF: {
                     SymbolType cond_type = check_types(node->left);
                     if (cond_type != TYPE_BOOL) {
-                        printf("Error: condición de IF debe ser booleano\n");
+                        yyerrorf(node->lineno,"Condición de IF debe ser booleano (encontrado %d)", cond_type);
                         semantic_error = 1;
                         return TYPE_ERROR;
                     }
@@ -408,7 +429,7 @@ SymbolType check_types(Tree *node){
         case NODE_IF_ELSE: {
                 SymbolType cond_type = check_types(node->left);
                 if (cond_type != TYPE_BOOL) {
-                    printf("Error: condición de IF debe ser booleano\n");
+                    yyerrorf(node->lineno,"Condición de IF debe ser booleano (encontrado %d)", cond_type);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -422,7 +443,7 @@ SymbolType check_types(Tree *node){
         case NODE_WHILE: {
                 SymbolType cond_type = check_types(node->left);
                 if (cond_type != TYPE_BOOL) {
-                    printf("Error: condición de WHILE debe ser booleano\n");
+                    yyerrorf(node->lineno,"Condición de WHILE debe ser booleano (encontrado %d)", cond_type);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -436,8 +457,8 @@ SymbolType check_types(Tree *node){
             if (node->right) {  // solo chequea si hay inicialización
                 SymbolType init_type = check_types(node->right);
                 if (var_type != init_type) {
-                    printf("Error: declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)\n",
-                            node->sym ? node->sym->name : "?", var_type, init_type);
+                    yyerrorf(node->lineno,"Declaración con tipo incompatible en variable '%s' (esperado %d, encontrado %d)",
+                     node->sym->name, node->sym->type, init_type);
                     semantic_error = 1;
                     return TYPE_ERROR;
                 }
@@ -466,7 +487,7 @@ SymbolType check_types(Tree *node){
         case NODE_T_VOID: return TYPE_VOID;
 
         default: {
-                printf("Error: nodo de tipo desconocido en check_types\n");
+                yyerrorf(node->lineno,"Nodo de tipo desconocido en check_types");
                 semantic_error = 1;
                 return TYPE_ERROR;
             }
@@ -498,7 +519,7 @@ void check_scopes(Tree *node) {
             SymbolTable *current = peekScope(&scope_Stack);
             Symbol *sym; 
             if (lookupSymbol(current, node->sym->name)) {
-                    printf("Error: redeclaración de metodo: '%s'\n", node->sym->name);
+                    yyerrorf(node->lineno,"Redeclaración de método: '%s'", node->sym->name);
                     semantic_error = 1;
                 } else {
                     sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
@@ -518,7 +539,7 @@ void check_scopes(Tree *node) {
             if (node->sym) {
                 SymbolTable *current = peekScope(&scope_Stack);
                 if (lookupSymbol(current, node->sym->name)) {
-                    printf("Error: redeclaración de '%s'\n", node->sym->name);
+                    yyerrorf(node->lineno,"Redeclaración de '%s'", node->sym->name);
                     semantic_error = 1;
                 } else {
                     insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
@@ -532,7 +553,7 @@ void check_scopes(Tree *node) {
             if (node->sym) {
                 Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
                 if (!s) {
-                    printf("Error: variable '%s' no declarada\n", node->sym->name);
+                    yyerrorf(node->lineno,"Variable '%s' no declarada", node->sym->name);
                     semantic_error = 1;
                 } else {
                     // linkear el símbolo encontrado
@@ -547,7 +568,7 @@ void check_scopes(Tree *node) {
             if (node->sym) {
                 Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
                 if (!s) {
-                    printf("Error: llamada a método '%s' no declarado\n", node->sym->name);
+                    yyerrorf(node->lineno,"Llamada a método '%s' no declarado", node->sym->name);
                     semantic_error = 1;
                 } else {
                     node->sym = s;                // linkear el método
@@ -562,7 +583,7 @@ void check_scopes(Tree *node) {
             if (node->sym) {
                 Symbol *s = lookupInScopes(&scope_Stack, node->sym->name);
                 if (!s) {
-                    printf("Error: llamada a variable '%s' no declarado\n", node->sym->name);
+                    yyerrorf(node->lineno,"Variable '%s' no declarada", node->sym->name);
                     semantic_error = 1;
                 } else {
                     node->sym = s;                // linkear la variable
@@ -581,3 +602,4 @@ void check_scopes(Tree *node) {
             break;
     }
 }
+

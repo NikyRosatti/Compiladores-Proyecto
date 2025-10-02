@@ -8,5 +8,6 @@ Program {
         if (y > 0) then {
             print_int(y);
         }
+        return;
     }
 }

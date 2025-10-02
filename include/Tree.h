@@ -53,6 +53,7 @@ typedef struct Tree {
     struct Symbol *sym;
     struct Tree *left;
     struct Tree *right;
+    int lineno;          /* línea en el archivo fuente */
 }Tree;
 
 typedef struct Queue {

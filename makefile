@@ -24,6 +24,7 @@ OBJS=$(BUILD_DIR)/bison.tab.c \
      $(SRC_DIR)/Stack.c \
      $(SRC_DIR)/Symbol.c \
 	 $(SRC_DIR)/intermediate.c
+	 $(SRC_DIR)/Error.c
 
 VALID_TARGETS := scan parse codinter assembly
 

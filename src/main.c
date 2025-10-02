@@ -11,6 +11,7 @@
 #include "SymbolTable.h"
 #include "intermediate.h"
 
+#include "Error.h"
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
     const char *_name = NULL;       \
@@ -46,7 +47,7 @@ int yyparse(void);
 extern FILE *yyin;
 extern char *yytext;
 extern int yylex(void);
-extern int semantic_error;
+int semantic_error = 0;   // variable global
 extern int main_decl;
 extern ScopeStack scope_Stack;
 extern Tree *ast_root;
@@ -168,8 +169,8 @@ int main(int argc, char **argv) {
             if (strcasecmp(target, "parse") == 0) {
                 printf("Árbol antes de ejecutar asignaciones:\n");
                 printTree(ast_root, 0);
+                fflush(stdout);
             }
-
             // Chequeo semantico
             check_scopes(ast_root);
             check_types(ast_root);
