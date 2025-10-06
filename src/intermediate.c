@@ -8,7 +8,7 @@ static const char *ir_names[] = {
     "LOAD","STORE","ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "METH_EXT", "PRINT"
+    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
 };
 
 static int tempCount = 0;
@@ -233,12 +233,13 @@ Symbol* gen_code(Tree *node, IRList *list) {
                 ir_emit(list, IR_METH_EXT, NULL, NULL, node->sym);
             } else {
                 // Etiqueta para inicio del método
-                if (node->sym && node->sym) {
+                if (node->sym) {
                     ir_emit(list, IR_METHOD, NULL, NULL, node->sym);
                 }
+                // Cuerpo del método
+                gen_code(node->right, list);
+                ir_emit(list, IR_FMETHOD, NULL, NULL, node->sym);
             }
-            // Cuerpo del método
-            gen_code(node->right, list);
             break;
         }
 
@@ -406,6 +407,7 @@ void ir_print(IRList *list) {
                 break;
 
             case IR_METHOD:
+            case IR_FMETHOD:
                 printf(": %s", code->result->name);
                 break;
 
