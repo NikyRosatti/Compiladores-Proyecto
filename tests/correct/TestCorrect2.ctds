@@ -1,13 +1,20 @@
 Program {
-    integer externMethod(integer a, bool b, integer c) {
-        return 1;
+    integer compute(integer a, integer b, integer c, integer d, integer e, integer f, integer g) {
+        integer x = a + b;
+        integer y = c + d;
+        
+        if (x > y) then {
+            integer temp = x;
+            x = y;
+            y = temp;
+        }
+        
+        integer result = x + y + e + f + g;
+        return result;
     }
+    
     void main() {
-        externMethod(12, true, 42);
-        integer A = 0;
-        integer a = 0;
-        externMethod(12, true, 42);
-        integer b = 0;
+        integer answer = compute(1, 2, 3, 4, 5, 6, 7);
         return;
     }
 }

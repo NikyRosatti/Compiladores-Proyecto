@@ -10,7 +10,7 @@
 #include "Tree.h"
 #include "SymbolTable.h"
 #include "intermediate.h"
-
+#include "Assembler.h"
 #include "Error.h"
 // Macro para mostrar token
 #define PRINT_TOKEN(tok) do {       \
@@ -157,7 +157,9 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
-    else if (strcasecmp(target, "parse") == 0 || strcasecmp(target, "codinter") == 0) {
+    else if (strcasecmp(target, "parse") == 0 || 
+            strcasecmp(target, "codinter") == 0 || 
+            strcasecmp(target, "assembly") == 0) {
         if (debug) {
             yydebug = 1;
         }
@@ -191,7 +193,27 @@ int main(int argc, char **argv) {
                 gen_code(ast_root, &list); //para hacer el codigo intermedio
                 ir_print(&list);
             } else {
-                printSymbolTable(peekScope(&scope_Stack));
+                //printSymbolTable(peekScope(&scope_Stack));
+                printf("\n");
+                fflush(stdout);
+            }
+            if (strcasecmp(target, "assembly") == 0) {
+                // === Calcular offsets ===
+                if (debug) {
+                    printf("\n[DEBUG] Calculando offsets...\n");
+                }
+                calculate_offsets(ast_root);
+                
+                if (debug) {
+                    printf("[DEBUG] Offsets calculados correctamente\n");
+                    printf("[DEBUG] Generando código assembly...\n");
+                }
+                
+                // === Generar assembly ===
+                //generate_assembly(ast_root, f);
+                
+                printf("Código assembly generado en '%s' ✔️\n", output_file);
+                
             }
         } else {
             fprintf(stderr, "Error en el parseo ❌\n");
@@ -199,10 +221,6 @@ int main(int argc, char **argv) {
             fclose(yyin);
             return 1;
         }
-    }
-    else if (strcasecmp(target, "assembly") == 0) {
-        fprintf(f, "Código ensamblador generado (simulado)\n");
-        fprintf(f, "mov eax, 1\n");
     } else {
         printf("Target desconocido: %s\n", target);
         return 1;

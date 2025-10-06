@@ -11,7 +11,10 @@ struct Tree;  /* forward declaration */
 int main_decl = 0; // chequear la existencia del metodo main
 extern TypeStack typeStack;
 ScopeStack scope_Stack;  // pila global de scopes
-
+int current_offset = 0; // offset actual en la pila
+int param_offset = 0; // offset actual para parámetros
+int in_function = 0; // flag para saber si estamos dentro de una función
+int in_param = 0; // flag para saber si estamos dentro de los parámetros de una función
 
 Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     Tree *n = malloc(sizeof(Tree));
