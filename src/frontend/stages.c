@@ -13,9 +13,6 @@ int run_scan_stage(FILE *f, bool debug) {
         if (debug) PRINT_TOKEN(tok);
     }
 
-    fclose(f);
-    fclose(yyin);
-
     printf(lexico_valido ? "Léxico válido ✔️\n" : "Léxico inválido ⚠️\n");
     return lexico_valido ? 0 : 1;
 }
