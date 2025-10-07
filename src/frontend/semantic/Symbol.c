@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Symbol.h"
-#include "Tree.h"   // donde tengas definidos NODE_T_INT, NODE_T_BOOL, etc.
+#include "Tree.h"
 
 Symbol* createSymbol(const char *name, struct Tree *typeNode, SymbolKind kind, Valores valor) {
     Symbol *s = malloc(sizeof(Symbol));

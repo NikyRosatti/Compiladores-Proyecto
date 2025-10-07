@@ -9,8 +9,8 @@ BUILD_DIR=build
 BIN_DIR=bin
 TARGET=$(BIN_DIR)/c-tds
 
-BISON=$(SRC_DIR)/bison.y
-FLEX=$(SRC_DIR)/flex.l
+BISON=$(SRC_DIR)/frontend/parser/bison.y
+FLEX=$(SRC_DIR)/frontend/lexer/flex.l
 
 CC=gcc
 CFLAGS=-Wall -Wextra -g -I$(INC_DIR)
@@ -19,13 +19,15 @@ FLFLAGS=-lfl
 OBJS=$(BUILD_DIR)/bison.tab.c \
      $(BUILD_DIR)/lex.yy.c \
      $(SRC_DIR)/main.c \
-     $(SRC_DIR)/Tree.c \
-     $(SRC_DIR)/SymbolTable.c \
-     $(SRC_DIR)/Stack.c \
-     $(SRC_DIR)/Symbol.c \
-	 $(SRC_DIR)/intermediate.c \
-	 $(SRC_DIR)/Assembler.c \
-	 $(SRC_DIR)/Error.c
+     $(SRC_DIR)/frontend/parser/Tree.c \
+     $(SRC_DIR)/frontend/semantic/SymbolTable.c \
+     $(SRC_DIR)/utils/Stack.c \
+     $(SRC_DIR)/frontend/semantic/Symbol.c \
+	 $(SRC_DIR)/intermediate/intermediate.c \
+	 $(SRC_DIR)/backend/Assembler.c \
+	 $(SRC_DIR)/utils/args.c \
+	 $(SRC_DIR)/frontend/stages.c \
+	 $(SRC_DIR)/frontend/semantic/Error.c
 
 VALID_TARGETS := scan parse codinter assembly
 

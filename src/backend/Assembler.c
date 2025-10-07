@@ -1,6 +1,7 @@
 #include "Assembler.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <intermediate.h>
 
 // Declaración de función helper interna (solo visible en este archivo)
 static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *current_method);
@@ -208,11 +209,11 @@ void assign_block_locals(Tree *node, int *offset) {
     assign_block_locals(node->right, offset);
 }
 
-void generate_assembly(Tree *node, FILE *output_file) {
-    if (!node || !output_file) return;
+void generate_assembly(IRList *list, FILE *output_file) {
+    //if (!node || !output_file) return;
     
-    // TODO: Implementar generación de assembly
-    fprintf(output_file, "# Assembly generation not yet implemented\n");
-    fprintf(output_file, ".section .text\n");
-    fprintf(output_file, ".globl main\n");
+    // Primero mostrar parametros globales
+    printf("# Assembly generation not yet implemented\n");
+    printf(".section .text\n");
+    printf(".globl main\n");
 }
