@@ -214,15 +214,11 @@ void assign_block_locals(Tree *node, int *offset) {
 
 // funcion principal
 void generateAssembly(IRList *irlist) {
-
-
     // primero recorremos variables globales
     collect_globals(irlist);
 
     // secciones de declaracion e inicializacion de variables
-    printf("    .data\n");
     print_globals_data(decl_vars);
-    printf("    .bss\n");
     print_globals_bss(decl_vars);
 
     // seccion text
@@ -279,10 +275,11 @@ void collect_globals(IRList *irlist) {
 // =============================
 void generateInstruction(IRCode *inst) {
     switch (inst->op) {
-        case IR_LOAD: break;
+        case IR_LOAD: generateLoad(inst); break;
         case IR_METH_EXT: break;
         case IR_PARAM: break;
         ///// estos de arriba no tienen instrucciones en Assembly
+        case IR_STORAGE:
         case IR_STORE: generateAssign(inst); break;
         case IR_ADD: generateBinaryOp(inst, "add"); break;
         case IR_SUB: generateBinaryOp(inst, "sub"); break;
@@ -318,6 +315,23 @@ void generateInstruction(IRCode *inst) {
     }
 }
 
+void generateLoad(IRCode *inst) {
+    Symbol *src = inst->arg1;
+    Symbol *dst = inst->result;
+
+    // Cargar en %rax
+    if (src->is_global)
+        printf("    mov %s(%%rip), %%rax\n", src->name);
+    else
+        printf("    mov %d(%%rbp), %%rax\n", src->offset);
+
+    // Guardar en destino
+    if (dst->is_global)
+        printf("    mov %%rax, %s(%%rip)\n", dst->name);
+    else
+        printf("    mov %%rax, %d(%%rbp)\n", dst->offset);
+}
+
 void generateCall(IRCode *inst) {
     Symbol *a = inst->arg1;   // nombre de la función
     Symbol *r = inst->result;
@@ -333,9 +347,9 @@ void generateCall(IRCode *inst) {
     }
 }
 
-generateEnter(IRCode *inst) {
-    // espacio que necesita cada metodo
-    printf("    enter   $(%d), $0\n", inst->result->total_stack_space);
+void generateEnter(IRCode *inst) {
+    int space = inst->result ? inst->result->total_stack_space : 0;
+    printf("    enter $(%d), $0\n", space);
 }
 
 // =============================

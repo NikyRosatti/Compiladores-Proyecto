@@ -7,7 +7,8 @@
 
 typedef enum {
     IR_LOAD, 
-    IR_STORE, 
+    IR_STORE,
+    IR_STORAGE, 
     IR_ADD, 
     IR_SUB, 
     IR_UMINUS, 

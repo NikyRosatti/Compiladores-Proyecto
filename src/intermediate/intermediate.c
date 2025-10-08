@@ -5,7 +5,7 @@
 
 // DEBE COINCIDIR EN POSICION CON EL ENUM IRInstr
 static const char *ir_names[] = {
-    "LOAD","STORE","ADD","SUB", "UMINUS", "MUL","DIV","MOD",
+    "LOAD","STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
     "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
@@ -51,21 +51,13 @@ Symbol* gen_code(Tree *node, IRList *list) {
         case NODE_T_VOID:
             return NULL;
 
-        case NODE_INT: {
-            Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
-            return t;
-        }
-
-        case NODE_TRUE: {
-            Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
-            return t;
-        }
-
+        case NODE_INT:
+        case NODE_TRUE:
         case NODE_FALSE: {
             Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
+            t->valor.value = (node->tipo == NODE_INT) ? node->sym->valor.value :
+                             (node->tipo == NODE_TRUE) ? 1 : 0;
+            ir_emit(list, IR_STORAGE, node->sym, NULL, t);
             return t;
         }
 
@@ -378,6 +370,7 @@ void ir_print(IRList *list) {
                 }
                 break;
             case IR_STORE:
+            case IR_STORAGE:
             case IR_LOAD:
             case IR_CALL:
             case IR_NOT:
