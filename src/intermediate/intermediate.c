@@ -20,6 +20,8 @@ Symbol* newTempSymbol() {
     sprintf(buf, "t%d", tempCount++);
     s->name = strdup(buf);
     s->type = TYPE_INT;  
+    s->is_temp = 1;
+    s->offset = 0;
     return s;
 }
 
@@ -437,4 +439,37 @@ void ir_free(IRList *list) {
     list->codes = NULL;
     list->size = 0;
     list->capacity = 0;
+}
+
+void offset_temps(IRList *list) {
+    int temp_offset = 0;            // Offset para temporales (negativo)
+    Symbol *current_method = NULL;
+
+    for (int i = 0; i < list->size; i++) {
+        IRCode *code = &list->codes[i];
+
+        if (code->op == IR_METHOD) {
+            // Entramos a un método
+            current_method = code->result;
+            if (current_method) {
+                // Empieza el offset de temporales justo después de los locals
+                temp_offset = (-current_method->total_stack_space) - 8;
+            }
+            continue;
+        }
+
+        if (code->op == IR_FMETHOD) {
+            // Guardar total de stack incluyendo temporales
+            if (current_method)
+                current_method->total_stack_space = -temp_offset - 8;
+            current_method = NULL;
+            continue;
+        }
+
+        // Asignar offset a los temporales dentro del método
+        if (current_method && code->result && code->result->is_temp && code->result->offset == 0) {
+            code->result->offset = temp_offset;
+            temp_offset -= 8;
+        }
+    }
 }

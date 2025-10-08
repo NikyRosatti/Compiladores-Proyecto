@@ -38,6 +38,8 @@ typedef struct Symbol {
     int param_count;
     int local_count;
     int total_stack_space;
+    int is_temp;
+
 } Symbol;
 struct Tree;
 

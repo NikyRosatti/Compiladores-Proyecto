@@ -66,6 +66,7 @@ int run_assembly_stage(FILE *f, bool debug) {
     IRList list;
     ir_init(&list);
     gen_code(ast_root, &list);
+    offset_temps(&list);
 
     if (debug) printf("[DEBUG] Generando código assembly...\n");
     generateAssembly(&list);
