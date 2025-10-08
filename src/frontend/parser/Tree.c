@@ -549,6 +549,19 @@ void check_scopes(Tree *node) {
                     semantic_error = 1;
                 } else {
                     insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+                
+                    /* Si es el scope global y hay inicializacion,
+                    solo permitimos un literal */
+                    if (scope_Stack.top == 0 && node->right) {
+                        if (!(node->right->tipo == NODE_INT ||
+                                node->right->tipo == NODE_TRUE ||
+                                node->right->tipo == NODE_FALSE)) {
+                            yyerrorf(node->lineno,
+                            "La inicialización de variable global '%s' debe ser un literal constante",
+                            node->sym->name);
+                            semantic_error = 1;
+                        }
+                    }
                 }
             }
             check_scopes(node->left);
