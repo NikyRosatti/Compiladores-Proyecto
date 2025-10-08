@@ -169,6 +169,7 @@ void execute(Tree *node) {
 
 int has_return(Tree *n) {
                     if (!n) return 0;                 // nodo nulo
+                    if (n->tipo == NODE_BLOCK) return 0;
                     if (n->tipo == NODE_RETURN )       // encontramos un return
                         return 1;
                     // buscar en left y right recursivamente
@@ -337,7 +338,7 @@ SymbolType check_types(Tree *node){
                 {
                     return TYPE_VOID;
                 }  else {
-                    if (!has_return(node)) {
+                    if (!has_return(node->right->left) && !has_return(node->right->right)) {
                         yyerrorf(node->lineno,"El método '%s' debe tener una sentencia return", node->sym->name);
                         semantic_error = 1;
                         return TYPE_ERROR;
