@@ -27,6 +27,7 @@ OBJS=$(BUILD_DIR)/bison.tab.c \
 	 $(SRC_DIR)/backend/Assembler.c \
 	 $(SRC_DIR)/utils/args.c \
 	 $(SRC_DIR)/frontend/stages.c \
+	 $(SRC_DIR)/backend/globals.c \
 	 $(SRC_DIR)/frontend/semantic/Error.c
 
 VALID_TARGETS := scan parse codinter assembly

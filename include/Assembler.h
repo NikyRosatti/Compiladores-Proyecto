@@ -4,6 +4,7 @@
 #include "tree.h"
 #include "symbol.h"
 #include "intermediate.h"
+#include "globals.h"
 
 /**
  * Calcula los offsets de parámetros y variables locales para la generación de código assembly.
@@ -24,7 +25,7 @@ void assign_block_locals(Tree *node, int *offset);
 /**
  * Genera el código assembly completo a partir del AST.
  */
-void generate_assembly(IRList *list);
+void generateAssembly(IRList *list);
 
 // Nombres de registros para los primeros 6 parámetros
 static const char* PARAM_REGISTERS[] = {
