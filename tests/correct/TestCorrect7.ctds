@@ -21,6 +21,7 @@ Program {
         } else {
             return false;
         }
+        return false;
     }
 
     // Método extern
