@@ -83,11 +83,11 @@ static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *cu
                     param_count++;
                     
                     #ifdef DEBUG_OFFSETS
-                    printf("  Parámetro %d '%s': offset %d (%s)\n", 
+                    /*printf("  Parámetro %d '%s': offset %d (%s)\n", 
                            param_sym->param_index,
                            param_sym->name, 
                            param_sym->offset,
-                           param_sym->param_index < 6 ? "registro" : "stack");
+                           param_sym->param_index < 6 ? "registro" : "stack");*/
                     #endif
                 }
                 
@@ -115,11 +115,11 @@ static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *cu
                 node->sym->total_stack_space = (params_from_regs + local_count) * 8;
                 
                 #ifdef DEBUG_OFFSETS
-                printf("Método '%s': %d parámetros (%d por registro, %d por stack), %d locales, stack space: %d bytes\n",
+                /*printf("Método '%s': %d parámetros (%d por registro, %d por stack), %d locales, stack space: %d bytes\n",
                        node->sym->name, param_count, 
                        (param_count > 6) ? 6 : param_count,
                        (param_count > 6) ? param_count - 6 : 0,
-                       local_count, node->sym->total_stack_space);
+                       local_count, node->sym->total_stack_space);*/
                 #endif
             }
             break;
@@ -147,8 +147,8 @@ static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *cu
                     *current_offset -= 8;
                     
                     #ifdef DEBUG_OFFSETS
-                    printf("  Variable local '%s': offset %d\n", 
-                           node->sym->name, node->sym->offset);
+                    /*printf("  Variable local '%s': offset %d\n", 
+                           node->sym->name, node->sym->offset);*/
                     #endif
                 }
             }
@@ -176,7 +176,7 @@ void mark_globals(Tree *node) {
         node->sym->offset = 0;  // Las globales no usan offset, usan labels
         
         #ifdef DEBUG_OFFSETS
-        printf("Variable global '%s' (sin offset, usa label)\n", node->sym->name);
+        //printf("Variable global '%s' (sin offset, usa label)\n", node->sym->name);
         #endif
     }
     
@@ -199,8 +199,8 @@ void assign_block_locals(Tree *node, int *offset) {
             *offset -= 8;
             
             #ifdef DEBUG_OFFSETS
-            printf("  Variable de bloque '%s': offset %d\n", 
-                   node->sym->name, node->sym->offset);
+            /*printf("  Variable de bloque '%s': offset %d\n", 
+                   node->sym->name, node->sym->offset);*/
             #endif
         }
     }
@@ -209,11 +209,146 @@ void assign_block_locals(Tree *node, int *offset) {
     assign_block_locals(node->right, offset);
 }
 
-void generate_assembly(IRList *list, FILE *output_file) {
-    //if (!node || !output_file) return;
-    
-    // Primero mostrar parametros globales
-    printf("# Assembly generation not yet implemented\n");
-    printf(".section .text\n");
-    printf(".globl main\n");
+// funcion principal
+void generateAssembly(IRList *irlist) {
+    printf("    .text\n");
+    printf("    .globl main\n");
+    printf("    push %%rbp\n");
+    printf("    mov %%rsp, %%rbp\n");
+
+    // Reservar espacio local si es necesario (por ahora fijo)
+    //printf("    sub $128, %%rsp\n\n");
+
+    // Iterar sobre todas las instrucciones
+    for (int i = 0; i < irlist->size; i++) {
+        IRInstr *inst = &irlist->codes[i];
+        generateInstruction(inst);
+    }
+
+    // Epílogo
+    printf("\n    leave\n");
+    printf("    ret\n");
 }
+
+
+// =============================
+// Implementación helpers
+// =============================
+void generateInstruction(IRCode *inst) {
+    switch (inst->op) {
+        case IR_LOAD: break;
+        case IR_METH_EXT: break;
+        ///// estos de arriba no tienen instrucciones en Assembly
+        case IR_STORE: break;
+        case IR_ADD: generateBinaryOp(inst, "add"); break;
+        case IR_SUB: generateBinaryOp(inst, "sub"); break;
+        case IR_MUL: generateBinaryOp(inst, "imul"); break;
+        case IR_DIV: generateBinaryOp(inst, "idiv"); break;
+        case IR_FMETHOD:
+        case IR_LABEL: generateLabel(inst); break;
+        case IR_METHOD: generateLabel(inst); generateEnter(inst); break;
+        case IR_GOTO: generateGoto(inst); break;
+        case IR_IF: generateIf(inst); break;
+        case IR_RETURN: generateReturn(inst); break;
+        default:
+            printf("    # [WARN] Operación IR no implementada: %d\n", inst->op);
+            break;
+    }
+}
+
+generateEnter(IRCode *inst) {
+    // espacio que necesita cada metodo
+    printf("enter   $(%d), $0\n", inst->result->total_stack_space);
+}
+
+// =============================
+// Operaciones binarias
+// =============================
+void generateBinaryOp(IRCode *inst, const char *op) {
+    Symbol *a = inst->arg1;
+    Symbol *b = inst->arg2;
+    Symbol *r = inst->result;
+
+    // Cargar arg1 en %rax
+    if (a->is_global)
+        printf("    mov %s(%%rip), %%rax\n", a->name);
+    else
+        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+
+    // Aplicar operación con arg2
+    if (b->is_global)
+        printf("    %s %s(%%rip), %%rax\n", op, b->name);
+    else
+        printf("    %s %d(%%rbp), %%rax\n", op, b->offset);
+
+    // Guardar resultado
+    if (r->is_global)
+        printf("    mov %%rax, %s(%%rip)\n", r->name);
+    else
+        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+}
+
+// =============================
+// Asignaciones simples
+// =============================
+void generateAssign(IRCode *inst) {
+    Symbol *a = inst->arg1;
+    Symbol *r = inst->result;
+
+    if (a->is_global)
+        printf("    mov %s(%%rip), %%rax\n", a->name);
+    else
+        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+
+    if (r->is_global)
+        printf("    mov %%rax, %s(%%rip)\n", r->name);
+    else
+        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+}
+
+// =============================
+// Labels y Goto
+// =============================
+void generateLabel(IRCode *inst) {
+    if (inst->op == IR_FMETHOD) printf("f%s:\n", inst->result->name);
+    else printf("%s:\n", inst->result->name);
+}
+
+void generateGoto(IRCode *inst) {
+    printf("    jmp %s\n", inst->result->name);
+}
+
+// =============================
+// If (salto condicional simple)
+// =============================
+void generateIf(IRCode *inst) {
+    Symbol *cond = inst->arg1;
+    Symbol *label = inst->result;
+
+    // Cargar condición
+    if (cond->is_global)
+        printf("    mov %s(%%rip), %%rax\n", cond->name);
+    else
+        printf("    mov %d(%%rbp), %%rax\n", cond->offset);
+
+    printf("    cmp $0, %%rax\n");
+    printf("    jne %s\n", label->name); // salta si distinto de 0
+}
+
+// =============================
+//  Return
+// =============================
+void generateReturn(IRCode *inst) {
+    if (inst->result != NULL) {
+        Symbol *res = inst->result;
+        if (res->is_global)
+            printf("    mov %s(%%rip), %%rax\n", res->name);
+        else
+            printf("    mov %d(%%rbp), %%rax\n", res->offset);
+    }
+    printf("    leave\n");
+    printf("    ret\n");
+}
+
+
+// no hay instruccion load equivalente sino que se contempla cuando se reserva espacio al inicio del metodo con enter.

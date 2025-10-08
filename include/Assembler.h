@@ -24,7 +24,7 @@ void assign_block_locals(Tree *node, int *offset);
 /**
  * Genera el código assembly completo a partir del AST.
  */
-void generate_assembly(IRList *list, FILE *output_file);
+void generate_assembly(IRList *list);
 
 // Nombres de registros para los primeros 6 parámetros
 static const char* PARAM_REGISTERS[] = {
@@ -35,5 +35,14 @@ static const char* PARAM_REGISTERS[] = {
     "%r8",   // Parámetro 5
     "%r9"    // Parámetro 6
 };
+
+// Prototipos de helpers
+void generateInstruction(IRCode *inst);
+void generateBinaryOp(IRCode *inst, const char *op);
+void generateAssign(IRCode *inst);
+void generateLabel(IRCode *inst);
+void generateGoto(IRCode *inst);
+void generateIf(IRCode *inst);
+void generateReturn(IRCode *inst);
 
 #endif // ASSEMBLER_H
