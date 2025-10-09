@@ -279,7 +279,7 @@ void generateInstruction(IRCode *inst) {
         case IR_METH_EXT: break;
         case IR_PARAM: break;
         ///// estos de arriba no tienen instrucciones en Assembly
-        case IR_STORAGE:
+        case IR_STORAGE: generateStorage(inst); break;
         case IR_STORE: generateAssign(inst); break;
         case IR_ADD: generateBinaryOp(inst, "add"); break;
         case IR_SUB: generateBinaryOp(inst, "sub"); break;
@@ -476,27 +476,34 @@ void generateCompare(IRCode *inst, const char *set_op) {
 }
 
 
-
 // =============================
-// Asignaciones simples
+// STORAGE: carga un literal o temporal
 // =============================
-void generateAssign(IRCode *inst) {
-    Symbol *a = inst->arg1;
+void generateStorage(IRCode *inst) {
     Symbol *r = inst->result;
 
-    if (a->is_global)
-        printf("    mov %s(%%rip), %%rax\n", a->name);
-    else
-        printf("    mov %d(%%rbp), %%rax\n", a->offset);
-
-    if (r->is_global)
-        printf("    mov %%rax, %s(%%rip)\n", r->name);
-    else
-        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+    if (r->is_global) {
+        // Global: cargar literal en RAX y pasar a global
+        printf("    mov $%d, %%rax\n", inst->arg1->valor.value);
+    } else {
+        // Local: almacenar literal en offset
+        printf("    mov $%d, %%rax\n", inst->arg1->valor.value);
+    }
 }
 
-void data(Symbol *global) {
+// =============================
+// ASSIGN: asigna valor de una variable o temporal
+// =============================
+void generateAssign(IRCode *inst) {
+    Symbol *a = inst->arg1; // DEBERIA SER RAX
+    Symbol *r = inst->result;
 
+    // Guardar valor en destino
+    if (r->is_global) {
+        printf("    mov %%rax, %s(%%rip)\n", r->name);
+    } else {
+        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+    }
 }
 
 // =============================
