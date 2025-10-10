@@ -5,13 +5,18 @@
 #include "Symbol.h" 
 #include "Stack.h"  
 #include "Error.h"
+#include "stages.h"
+#include "utils.h"
 
 extern int semantic_error;   // variable global
 struct Tree;  /* forward declaration */
 int main_decl = 0; // chequear la existencia del metodo main
 extern TypeStack typeStack;
 ScopeStack scope_Stack;  // pila global de scopes
-
+int current_offset = 0; // offset actual en la pila
+int param_offset = 0; // offset actual para parámetros
+int in_function = 0; // flag para saber si estamos dentro de una función
+int in_param = 0; // flag para saber si estamos dentro de los parámetros de una función
 
 Tree* createNode(typeTree tipo, Symbol *sym, Tree *left, Tree *right) {
     Tree *n = malloc(sizeof(Tree));
@@ -164,6 +169,7 @@ void execute(Tree *node) {
 
 int has_return(Tree *n) {
                     if (!n) return 0;                 // nodo nulo
+                    if (n->tipo == NODE_BLOCK) return 0;
                     if (n->tipo == NODE_RETURN )       // encontramos un return
                         return 1;
                     // buscar en left y right recursivamente
@@ -332,7 +338,7 @@ SymbolType check_types(Tree *node){
                 {
                     return TYPE_VOID;
                 }  else {
-                    if (!has_return(node)) {
+                    if (!has_return(node->right->left) && !has_return(node->right->right)) {
                         yyerrorf(node->lineno,"El método '%s' debe tener una sentencia return", node->sym->name);
                         semantic_error = 1;
                         return TYPE_ERROR;
@@ -543,6 +549,19 @@ void check_scopes(Tree *node) {
                     semantic_error = 1;
                 } else {
                     insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+                
+                    /* Si es el scope global y hay inicializacion,
+                    solo permitimos un literal */
+                    if (scope_Stack.top == 0 && node->right) {
+                        if (!(node->right->tipo == NODE_INT ||
+                                node->right->tipo == NODE_TRUE ||
+                                node->right->tipo == NODE_FALSE)) {
+                            yyerrorf(node->lineno,
+                            "La inicialización de variable global '%s' debe ser un literal constante",
+                            node->sym->name);
+                            semantic_error = 1;
+                        }
+                    }
                 }
             }
             check_scopes(node->left);

@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include "Error.h"
 
-extern int semantic_error;   // declaramos la variable global que está definida en main.c
+int semantic_error = 0;   // declaramos la variable global
 extern int yylineno;       // de Bison
 extern char *yytext;       // de Flex
 

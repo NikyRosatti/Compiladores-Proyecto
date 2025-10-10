@@ -1,7 +1,5 @@
 *.tab.*
-lexer
 lex.yy.c
-parser
 resultados/*
 *.out
 c-tds

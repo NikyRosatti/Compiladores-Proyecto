@@ -24,6 +24,10 @@ echo -e "${BLUE}==============================================${NC}"
 
 # Loop por cada tipo de test
 for i in "${!TEST_DIRS[@]}"; do
+    # Si target=scan, solo procesar tests correctos
+    if [ "$TARGET" = "scan" ] && [ $i -eq 2 ]; then
+        continue
+    fi
     TEST_DIR=${TEST_DIRS[$i]}
     RES_DIR=${RESULT_DIRS[$i]}
     LABEL=${TEST_LABELS[$i]}

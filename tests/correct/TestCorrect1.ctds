@@ -14,8 +14,7 @@ Program
       y = get_int();
       if (y == 1) then {
         print_int(y);
-      } else {
-        return ;
-      }
+      } 
+      return ;
   }
 }

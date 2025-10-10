@@ -5,7 +5,7 @@
 
 // DEBE COINCIDIR EN POSICION CON EL ENUM IRInstr
 static const char *ir_names[] = {
-    "LOAD","STORE","ADD","SUB", "UMINUS", "MUL","DIV","MOD",
+    "LOAD","STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
     "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
@@ -20,6 +20,8 @@ Symbol* newTempSymbol() {
     sprintf(buf, "t%d", tempCount++);
     s->name = strdup(buf);
     s->type = TYPE_INT;  
+    s->is_temp = 1;
+    s->offset = 0;
     return s;
 }
 
@@ -49,21 +51,13 @@ Symbol* gen_code(Tree *node, IRList *list) {
         case NODE_T_VOID:
             return NULL;
 
-        case NODE_INT: {
-            Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
-            return t;
-        }
-
-        case NODE_TRUE: {
-            Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
-            return t;
-        }
-
+        case NODE_INT:
+        case NODE_TRUE:
         case NODE_FALSE: {
             Symbol *t = newTempSymbol();
-            ir_emit(list, IR_LOAD, node->sym, NULL, t);
+            t->valor.value = (node->tipo == NODE_INT) ? node->sym->valor.value :
+                             (node->tipo == NODE_TRUE) ? 1 : 0;
+            ir_emit(list, IR_STORAGE, node->sym, NULL, t);
             return t;
         }
 
@@ -376,6 +370,7 @@ void ir_print(IRList *list) {
                 }
                 break;
             case IR_STORE:
+            case IR_STORAGE:
             case IR_LOAD:
             case IR_CALL:
             case IR_NOT:
@@ -437,4 +432,37 @@ void ir_free(IRList *list) {
     list->codes = NULL;
     list->size = 0;
     list->capacity = 0;
+}
+
+void offset_temps(IRList *list) {
+    int temp_offset = 0;            // Offset para temporales (negativo)
+    Symbol *current_method = NULL;
+
+    for (int i = 0; i < list->size; i++) {
+        IRCode *code = &list->codes[i];
+
+        if (code->op == IR_METHOD) {
+            // Entramos a un método
+            current_method = code->result;
+            if (current_method) {
+                // Empieza el offset de temporales justo después de los locals
+                temp_offset = (-current_method->total_stack_space) - 8;
+            }
+            continue;
+        }
+
+        if (code->op == IR_FMETHOD) {
+            // Guardar total de stack incluyendo temporales
+            if (current_method)
+                current_method->total_stack_space = -temp_offset - 8;
+            current_method = NULL;
+            continue;
+        }
+
+        // Asignar offset a los temporales dentro del método
+        if (current_method && code->result && code->result->is_temp && code->result->offset == 0) {
+            code->result->offset = temp_offset;
+            temp_offset -= 8;
+        }
+    }
 }
