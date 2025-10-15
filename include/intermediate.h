@@ -6,7 +6,8 @@
 #include <stdlib.h>
 
 typedef enum {
-    IR_LOAD, 
+    IR_LOAD,
+    IR_DECL, 
     IR_STORE,
     IR_STORAGE, 
     IR_ADD, 

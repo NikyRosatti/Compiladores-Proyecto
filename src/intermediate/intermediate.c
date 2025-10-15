@@ -5,7 +5,7 @@
 
 // DEBE COINCIDIR EN POSICION CON EL ENUM IRInstr
 static const char *ir_names[] = {
-    "LOAD","STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
+    "LOAD","DECL", "STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
     "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
@@ -192,6 +192,9 @@ Symbol* gen_code(Tree *node, IRList *list) {
             if (node->right) {
                 Symbol *rhs = gen_code(node->right, list);
                 ir_emit(list, IR_STORE, rhs, NULL, node->sym);
+            } else {
+                // Valor por defecto
+                ir_emit(list, IR_DECL, node->sym, NULL, node->sym);
             }
             break;
         }
@@ -398,6 +401,7 @@ void ir_print(IRList *list) {
                 break;
             case IR_LABEL:
             case IR_METH_EXT:
+            case IR_DECL:
                 printf(" %s", code->result->name);
                 break;
 
