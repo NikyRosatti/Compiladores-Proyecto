@@ -218,12 +218,15 @@ void generateAssembly(IRList *irlist) {
     collect_globals(irlist);
 
     // secciones de declaracion e inicializacion de variables
+    printf(".data\n");
     print_globals_data(decl_vars);
-    print_globals_bss(decl_vars);
+    //no hay bss por la decision
+    //printf("    .bss\n");
+    //print_globals_bss(decl_vars);
 
     // seccion text
-    printf("    .text\n");
-    printf("    .globl main\n");
+    printf(".text\n");
+    printf(".globl main\n");
     printf("    push %%rbp\n");
     printf("    mov %%rsp, %%rbp\n");
 
@@ -244,24 +247,17 @@ void generateAssembly(IRList *irlist) {
 // Recorre la lista de IR para recolectar variables globales
 void collect_globals(IRList *irlist) {
     if (!irlist) return;
-
-    int in_method = 0;  // 0 = global, 1 = dentro de un método
-
+    
     for (int i = 0; i < irlist->size; i++) {
         IRCode *inst = &irlist->codes[i];
         if (!inst) continue;
 
         switch (inst->op) {
-            case IR_METHOD:
-                in_method = 1;
-                break;
-            case IR_FMETHOD:
-                in_method = 0;
-                break;
-            default:
+            case IR_DECL:
+            case IR_STORE:
                 // Solo variables globales fuera de métodos
-                if (in_method == 0 && inst->result && inst->result->is_global) {
-                    add_decl(&decl_vars, inst->result);
+                if (inst->result && inst->result->is_global) {
+                    add_decl(&decl_vars, inst->result, inst->arg1);
                 }
                 break;
         }
@@ -287,6 +283,8 @@ void generateInstruction(IRCode *inst) {
         case IR_DIV: generateBinaryOp(inst, "idiv"); break;
 
         case IR_MOD:break;
+
+        case IR_DECL:break; // implementar para locales
 
         case IR_CALL: generateCall(inst); break;
         // Operadores de comparacion

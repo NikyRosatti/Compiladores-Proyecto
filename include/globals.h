@@ -9,6 +9,7 @@
 /* Nodo de lista enlazada de símbolos */
 typedef struct SymbolNode {
     Symbol *sym;
+    Symbol *valor;
     struct SymbolNode *next;
 } SymbolNode;
 
@@ -16,7 +17,7 @@ typedef struct SymbolNode {
 extern SymbolNode *decl_vars;
 
 /* Funciones para manejar la lista */
-void add_decl(SymbolNode **head, Symbol *sym);
+void add_decl(SymbolNode **head, Symbol *sym, Symbol *valor);
 void print_globals(SymbolNode *head);
 
 #endif /* GLOBALS_H */
