@@ -205,22 +205,15 @@ expr: ID {
     }
     | method_call {$$ = $1;}
     | INT {
-        Symbol *s = malloc(sizeof(Symbol));
-        if (!s) { fprintf(stderr, "Error: sin memoria\n"); exit(1); }
-        s->valor.value = $1;
-        s->type = TYPE_INT;
+        Symbol *s = createLiteralSymbol($1, TYPE_INT);
         $$ = createNode(NODE_INT, s, NULL, NULL);
     }
     | TRUE {
-        Symbol *s = malloc(sizeof(Symbol));
-        s->valor.value = 1;
-        s->type = TYPE_BOOL;
+        Symbol *s = createLiteralSymbol(1, TYPE_BOOL);
         $$ = createNode(NODE_TRUE, s, NULL, NULL);
     }
     | FALSE {
-        Symbol *s = malloc(sizeof(Symbol));
-        s->valor.value = 0;
-        s->type = TYPE_BOOL;
+        Symbol *s = createLiteralSymbol(0, TYPE_BOOL);
         $$ = createNode(NODE_FALSE, s, NULL, NULL);
     }
     | expr '+' expr { $$ = createNode(NODE_SUM,0,$1,$3); }

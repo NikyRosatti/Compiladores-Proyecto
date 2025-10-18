@@ -283,7 +283,7 @@ void generateInstruction(IRCode *inst) {
         case IR_MUL: generateBinaryOp(inst, "imul"); break;
         case IR_DIV: generateBinaryOp(inst, "idiv"); break;
 
-        case IR_MOD:break;
+        case IR_MOD: generateBinaryOp(inst, "mod");break;
 
         case IR_DECL:break; // implementar para locales
 
@@ -354,49 +354,69 @@ void generateEnter(IRCode *inst) {
 // =============================
 // Operaciones binarias
 // =============================
+// Se necesita un contador global o estático para generar etiquetas únicas
+static int div_label_count = 0;
+
 void generateBinaryOp(IRCode *inst, const char *op) {
     Symbol *a = inst->arg1;
     Symbol *b = inst->arg2;
     Symbol *r = inst->result;
 
+    // --- MANEJO ESPECIAL PARA DIVISIÓN Y MÓDULO ---
+    if (strcmp(op, "idiv") == 0 || strcmp(op, "mod") == 0) {
+        int current_label = div_label_count++; // Etiqueta única para este bloque
 
-    if (strcmp(op, "mod") == 0) {
-        // Cargar arg1 en %rax
+        // 1. Cargar el DIVISOR y compararlo con cero
+        if (b->is_global)
+            printf("    mov %s(%%rip), %%rcx\n", b->name); // Usamos %rcx como registro temporal
+        else
+            printf("    mov %d(%%rbp), %%rcx\n", b->offset);
+        
+        printf("    cmp $0, %%rcx\n");
+        printf("    je _division_by_zero_error_%d\n", current_label); // Si es cero, saltar
+
+        // 2. Si no es cero, proceder con la operación normal
         if (a->is_global)
             printf("    mov %s(%%rip), %%rax\n", a->name);
         else
             printf("    mov %d(%%rbp), %%rax\n", a->offset);
 
-        printf("    cqto\n"); // Extiende signo de RAX → RDX:RAX
+        printf("    cqto\n");
+        printf("    idiv %%rcx\n"); // Dividir por el registro %rcx
 
-        // Divisor
-        if (b->is_global)
-            printf("    idiv %s(%%rip)\n", b->name);
-        else
-            printf("    idiv %d(%%rbp)\n", b->offset);
-
-        // Guardar el resto (mod) en destino
+        // 3. Guardar el resultado correcto (cociente o resto)
+        const char* result_reg = (strcmp(op, "mod") == 0) ? "%rdx" : "%rax";
         if (r->is_global)
-            printf("    mov %%rdx, %s(%%rip)\n", r->name);
+            printf("    mov %s, %s(%%rip)\n", result_reg, r->name);
         else
-            printf("    mov %%rdx, %d(%%rbp)\n", r->offset);
+            printf("    mov %s, %d(%%rbp)\n", result_reg, r->offset);
+        
+        printf("    jmp _division_ok_%d\n", current_label);
 
-        return;
+        // 4. Bloque de manejo de error
+        printf("_division_by_zero_error_%d:\n", current_label);
+        // Aquí podrías llamar a una función que imprima un error.
+        // Por ahora, simplemente terminamos el programa.
+        printf("    mov $136, %%edi\n"); // Código de error que quieras usar
+        printf("    call exit\n");
+
+        printf("_division_ok_%d:\n", current_label);
+
+        return; // Termina la función aquí
     }
 
-    // Cargar arg1 en %rax
+    // --- CÓDIGO ORIGINAL PARA OTRAS OPERACIONES (add, sub, imul) ---
+    // (Este código está bien y no necesita cambios)
     if (a->is_global)
         printf("    mov %s(%%rip), %%rax\n", a->name);
     else
         printf("    mov %d(%%rbp), %%rax\n", a->offset);
 
-    // Aplicar operación con arg2
     if (b->is_global)
         printf("    %s %s(%%rip), %%rax\n", op, b->name);
     else
         printf("    %s %d(%%rbp), %%rax\n", op, b->offset);
 
-    // Guardar resultado
     if (r->is_global)
         printf("    mov %%rax, %s(%%rip)\n", r->name);
     else
@@ -506,15 +526,11 @@ void generateCompare(IRCode *inst, const char *set_op) {
 // STORAGE: carga un literal o temporal
 // =============================
 void generateStorage(IRCode *inst) {
-    Symbol *r = inst->result;
+    Symbol *literal = inst->arg1; // El símbolo que contiene el valor literal.
+    Symbol *dest = inst->result;    // El temporal de destino en la pila.
 
-    if (r->is_global) {
-        // Global: cargar literal en RAX y pasar a global
-        printf("    mov $%d, %%rax\n", inst->arg1->valor.value);
-    } else {
-        // Local: almacenar literal en offset
-        printf("    mov $%d, %%rax\n", inst->arg1->valor.value);
-    }
+    // Genera la instrucción para mover el valor inmediato al offset del temporal.
+    printf("    mov $%d, %d(%%rbp)\n", literal->valor.value, dest->offset);
 }
 
 // =============================
@@ -524,6 +540,11 @@ void generateAssign(IRCode *inst) {
     Symbol *a = inst->arg1; // DEBERIA SER RAX
     Symbol *r = inst->result;
 
+    if (a->is_global) {
+        printf("    mov %s(%%rip), %%rax\n", a->name);
+    } else {
+        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+    }
     // Guardar valor en destino
     if (r->is_global) {
         printf("    mov %%rax, %s(%%rip)\n", r->name);

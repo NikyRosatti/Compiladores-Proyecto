@@ -55,11 +55,25 @@ Symbol* gen_code(Tree *node, IRList *list) {
         case NODE_INT:
         case NODE_TRUE:
         case NODE_FALSE: {
-            Symbol *t = newTempSymbol();
-            t->valor.value = (node->tipo == NODE_INT) ? node->sym->valor.value :
-                             (node->tipo == NODE_TRUE) ? 1 : 0;
-            ir_emit(list, IR_STORAGE, node->sym, NULL, t);
-            return t;
+            // 1. Crear un nuevo símbolo temporal para guardar el valor del literal.
+            Symbol *temp_sym = newTempSymbol();
+
+            // 2. Crear un símbolo simple para encapsular el valor del literal.
+            //    Este no es un temporal en la pila, solo un portador del valor.
+            Symbol *literal_val_sym = malloc(sizeof(Symbol));
+            if (node->tipo == NODE_INT) {
+                literal_val_sym->valor.value = node->sym->valor.value;
+            } else {
+                literal_val_sym->valor.value = (node->tipo == NODE_TRUE) ? 1 : 0;
+            }
+            literal_val_sym->name = NULL;
+
+            // 3. Emitir una instrucción para ALMACENAR el valor literal en el temporal.
+            //    Esta es la clave: le decimos al generador que mueva el número a la pila.
+            ir_emit(list, IR_STORAGE, literal_val_sym, NULL, temp_sym);
+
+            // 4. Devolver el símbolo temporal, que ahora contiene el valor.
+            return temp_sym;
         }
 
         case NODE_ID: {

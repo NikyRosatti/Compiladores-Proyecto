@@ -10,7 +10,8 @@ typedef union {
     
 typedef enum {
     VAR,
-    FUNC
+    FUNC,
+    LITERAL
 } SymbolKind;
 
 typedef enum {
@@ -45,4 +46,5 @@ struct Tree;
 
 Symbol *createSymbolCall(const char *name, SymbolKind kind);
 Symbol* createSymbol(const char *name, struct Tree *typeNode, SymbolKind kind, Valores valor);
+Symbol* createLiteralSymbol(int value, SymbolType type);
 #endif /*SYMBOL_H*/
