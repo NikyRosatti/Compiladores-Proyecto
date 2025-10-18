@@ -226,7 +226,7 @@ SymbolType check_types(Tree *node){
                     yyerrorf(node->lineno,"Operador aritmético espera enteros (encontrado %d y %d)", left, right);
                     semantic_error = 1;
                     return TYPE_ERROR;
-                } else if(evaluate(node->right) == 0) {
+                } else if(node->right->tipo == NODE_INT && node->right->sym->valor.value == 0) {
                     yyerrorf(node->lineno,"División o módulo por cero");
                     semantic_error = 1;
                     return TYPE_ERROR;
@@ -548,8 +548,9 @@ void check_scopes(Tree *node) {
                     yyerrorf(node->lineno,"Redeclaración de '%s'", node->sym->name);
                     semantic_error = 1;
                 } else {
-                    insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
-                
+                    Symbol *inserted_sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
+        
+                    node->sym = inserted_sym;
                     /* Si es el scope global y hay inicializacion,
                     solo permitimos un literal */
                     if (scope_Stack.top == 0 && node->right) {

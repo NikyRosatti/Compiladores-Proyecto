@@ -20,6 +20,7 @@ Symbol* newTempSymbol() {
     sprintf(buf, "t%d", tempCount++);
     s->name = strdup(buf);
     s->type = TYPE_INT;  
+    s->is_global = 0;
     s->is_temp = 1;
     s->offset = 0;
     return s;

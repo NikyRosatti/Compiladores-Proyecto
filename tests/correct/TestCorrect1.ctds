@@ -1,20 +1,56 @@
 Program
+{
+  void main()
   {
-    integer inc(integer x) {
-      return x + 1;
-    }
+    // --- Variables para las pruebas ---
+    integer a = 20;
+    integer b = 5;
+    integer res_aritmetico;
+    bool res_logico;
+
+    // ------------------------------------
+    // 1. OPERADORES ARITMÉTICOS
+    // ------------------------------------
+    res_aritmetico = a + b;     // Suma: 25
+    res_aritmetico = a - b;     // Resta: 15
+    res_aritmetico = a * b;     // Multiplicación: 100
+    res_aritmetico = a / b;     // División: 4
+    res_aritmetico = 21 % 4;    // Módulo: 1
+    res_aritmetico = -a;        // Menos unario: -20
+
+    // ------------------------------------
+    // 2. OPERADORES RELACIONALES
+    // ------------------------------------
+    res_logico = (a > b);       // Mayor que: true
+    res_logico = (a < b);       // Menor que: false
+    res_logico = (b >= 5);      // Mayor o igual que: true
+    res_logico = (a <= b);      // Menor o igual que: false
+    res_logico = (a == 20);     // Igualdad: true
+    res_logico = (b != 5);      // Desigualdad: false
+
+    // ------------------------------------
+    // 3. OPERADORES LÓGICOS
+    // ------------------------------------
+    res_logico = true && false; // AND: false
+    res_logico = true || false; // OR: true
+    res_logico = !true;         // NOT: false
+
+    // ------------------------------------
+    // 4. PRECEDENCIA Y PARÉNTESIS
+    // ------------------------------------
     
-    integer get_int() extern;
+    // Debería calcular (a*b) + (a/b) -> (20*5) + (20/5) -> 100 + 4 = 104
+    res_aritmetico = a * b + a / b; 
 
-    void print_int(integer i) extern ;
+    // Debería calcular a * (b+a) -> 20 * (5+20) -> 20 * 25 = 500
+    res_aritmetico = a * (b + a);
+    
+    // ( (true && true) || false ) -> ( true || false ) -> true
+    res_logico = a > b && b == 5 || a < b;
 
-    void main()
-    {
-      integer y = 0;
-      y = get_int();
-      if (y == 1) then {
-        print_int(y);
-      } 
-      return ;
+    // ! (true && true) -> !true -> false
+    res_logico = !(a > b && b == 5);
+
+    return;
   }
 }

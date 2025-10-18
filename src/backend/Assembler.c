@@ -279,6 +279,7 @@ void generateInstruction(IRCode *inst) {
         case IR_STORE: generateAssign(inst); break;
         case IR_ADD: generateBinaryOp(inst, "add"); break;
         case IR_SUB: generateBinaryOp(inst, "sub"); break;
+        case IR_UMINUS: generateUminus(inst); break;
         case IR_MUL: generateBinaryOp(inst, "imul"); break;
         case IR_DIV: generateBinaryOp(inst, "idiv"); break;
 
@@ -400,6 +401,33 @@ void generateBinaryOp(IRCode *inst, const char *op) {
         printf("    mov %%rax, %s(%%rip)\n", r->name);
     else
         printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+}
+
+/**
+ * Genera el código assembly para la operación de menos unario (negación).
+ * IR: UMINUS src, NULL, dest  (ej. dest = -src)
+ */
+void generateUminus(IRCode *inst) {
+    Symbol *src = inst->arg1;    // Símbolo de origen (el que se va a negar)
+    Symbol *dest = inst->result; // Símbolo de destino (donde se guarda el resultado)
+
+    // 1. Cargar el valor del operando 'src' en el registro %rax.
+    if (src->is_global) {
+        printf("    mov %s(%%rip), %%rax\n", src->name);
+    } else {
+        printf("    mov %d(%%rbp), %%rax\n", src->offset);
+    }
+
+    // 2. Aplicar la instrucción NEG a %rax.
+    // Esto calcula el complemento a dos del valor en el registro.
+    printf("    neg %%rax\n");
+
+    // 3. Guardar el resultado (que ahora está en %rax) en el destino 'dest'.
+    if (dest->is_global) {
+        printf("    mov %%rax, %s(%%rip)\n", dest->name);
+    } else {
+        printf("    mov %%rax, %d(%%rbp)\n", dest->offset);
+    }
 }
 
 void generateLogicalOp(IRCode *inst, const char *op) {
