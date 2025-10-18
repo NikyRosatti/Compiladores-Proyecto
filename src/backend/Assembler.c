@@ -227,8 +227,8 @@ void generateAssembly(IRList *irlist) {
     // seccion text
     printf(".text\n");
     printf(".globl main\n");
-    printf("    push %%rbp\n");
-    printf("    mov %%rsp, %%rbp\n");
+    printf("    pushq %%rbp\n");
+    printf("    movq %%rsp, %%rbp\n");
 
     // Iterar sobre todas las instrucciones
     for (int i = 0; i < irlist->size; i++) {
@@ -277,13 +277,13 @@ void generateInstruction(IRCode *inst) {
         ///// estos de arriba no tienen instrucciones en Assembly
         case IR_STORAGE: generateStorage(inst); break;
         case IR_STORE: generateAssign(inst); break;
-        case IR_ADD: generateBinaryOp(inst, "add"); break;
-        case IR_SUB: generateBinaryOp(inst, "sub"); break;
+        case IR_ADD: generateBinaryOp(inst, "addq"); break;
+        case IR_SUB: generateBinaryOp(inst, "subq"); break;
         case IR_UMINUS: generateUminus(inst); break;
-        case IR_MUL: generateBinaryOp(inst, "imul"); break;
-        case IR_DIV: generateBinaryOp(inst, "idiv"); break;
+        case IR_MUL: generateBinaryOp(inst, "imulq"); break;
+        case IR_DIV: generateBinaryOp(inst, "idivq"); break;
 
-        case IR_MOD: generateBinaryOp(inst, "mod");break;
+        case IR_MOD: generateBinaryOp(inst, "modq");break;
 
         case IR_DECL:break; // implementar para locales
 
@@ -298,9 +298,9 @@ void generateInstruction(IRCode *inst) {
 
         // Operadores Logicos
 
-        case IR_AND: generateLogicalOp(inst, "and"); break; 
-        case IR_OR : generateLogicalOp(inst, "or"); break;
-        case IR_NOT : generateLogicalOp(inst, "not"); break;
+        case IR_AND: generateLogicalOp(inst, "andq"); break; 
+        case IR_OR : generateLogicalOp(inst, "orq"); break;
+        case IR_NOT : generateLogicalOp(inst, "notq"); break;
 
         case IR_FMETHOD:
         case IR_LABEL: generateLabel(inst); break;
@@ -318,37 +318,46 @@ void generateLoad(IRCode *inst) {
     Symbol *src = inst->arg1;
     Symbol *dst = inst->result;
 
+    printf("    # Carga el valor de la variable '%s' en un temporal\n", src->name);
+
     // Cargar en %rax
     if (src->is_global)
-        printf("    mov %s(%%rip), %%rax\n", src->name);
+        printf("    movq %s(%%rip), %%rax\n", src->name);
     else
-        printf("    mov %d(%%rbp), %%rax\n", src->offset);
+        printf("    movq %d(%%rbp), %%rax\n", src->offset);
 
     // Guardar en destino
     if (dst->is_global)
-        printf("    mov %%rax, %s(%%rip)\n", dst->name);
+        printf("    movq %%rax, %s(%%rip)\n", dst->name);
     else
-        printf("    mov %%rax, %d(%%rbp)\n", dst->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", dst->offset);
+
+    printf("\n");
 }
 
 void generateCall(IRCode *inst) {
     Symbol *a = inst->arg1;   // nombre de la función
     Symbol *r = inst->result;
     // 2. Llamar a la función
+    printf("    # Llamada a la función '%s'\n", a->name);
     printf("    call %s\n", a->name);
     
     // 3. Guardar el valor de retorno (en %%rax)
     if (r) {
+        printf("    # Guardar el valor de retorno (desde RAX)\n");
         if (r->is_global)
-            printf("    mov %%eax, %s(%%rip)\n", r->name);
+            printf("    movq %%eax, %s(%%rip)\n", r->name);
         else
-            printf("    mov %%eax, %d(%%rbp)\n", r->offset);
+            printf("    movq %%eax, %d(%%rbp)\n", r->offset);
     }
+    printf("\n");
 }
 
 void generateEnter(IRCode *inst) {
     int space = inst->result ? inst->result->total_stack_space : 0;
+    printf("    # Prólogo del método: crear stack frame y reservar %d bytes\n", space);
     printf("    enter $(%d), $0\n", space);
+    printf("\n");
 }
 
 // =============================
@@ -363,54 +372,63 @@ void generateBinaryOp(IRCode *inst, const char *op) {
     Symbol *r = inst->result;
 
     // --- MANEJO ESPECIAL PARA DIVISIÓN Y MÓDULO ---
-    if (strcmp(op, "idiv") == 0 || strcmp(op, "mod") == 0) {
+    if (strcmp(op, "idivq") == 0 || strcmp(op, "modq") == 0) {
         int current_label = div_label_count++; // Etiqueta única para este bloque
+
+        printf("    # --- Inicio de bloque de división/módulo ---\n");
+        printf("    # Verificar si el divisor es cero\n");
 
         // 1. Cargar el DIVISOR y compararlo con cero
         if (b->is_global)
-            printf("    mov %s(%%rip), %%rcx\n", b->name); // Usamos %rcx como registro temporal
+            printf("    movq %s(%%rip), %%rcx\n", b->name); // Usamos %rcx como registro temporal
         else
-            printf("    mov %d(%%rbp), %%rcx\n", b->offset);
+            printf("    movq %d(%%rbp), %%rcx\n", b->offset);
         
-        printf("    cmp $0, %%rcx\n");
+        printf("    cmpq $0, %%rcx\n");
         printf("    je _division_by_zero_error_%d\n", current_label); // Si es cero, saltar
+        printf("\n");
 
+        printf("    # Realizar la operación de división\n");
         // 2. Si no es cero, proceder con la operación normal
         if (a->is_global)
-            printf("    mov %s(%%rip), %%rax\n", a->name);
+            printf("    movq %s(%%rip), %%rax\n", a->name);
         else
-            printf("    mov %d(%%rbp), %%rax\n", a->offset);
+            printf("    movq %d(%%rbp), %%rax\n", a->offset);
 
         printf("    cqto\n");
         printf("    idiv %%rcx\n"); // Dividir por el registro %rcx
-
+        printf("\n");
         // 3. Guardar el resultado correcto (cociente o resto)
         const char* result_reg = (strcmp(op, "mod") == 0) ? "%rdx" : "%rax";
+        const char* op_name = (strcmp(op, "mod") == 0) ? "Módulo (%)" : "División (/)";
+        printf("    # Guardar el resultado de la operación '%s'\n", op_name);
         if (r->is_global)
-            printf("    mov %s, %s(%%rip)\n", result_reg, r->name);
+            printf("    movq %s, %s(%%rip)\n", result_reg, r->name);
         else
-            printf("    mov %s, %d(%%rbp)\n", result_reg, r->offset);
+            printf("    movq %s, %d(%%rbp)\n", result_reg, r->offset);
         
         printf("    jmp _division_ok_%d\n", current_label);
-
+        printf("\n");
         // 4. Bloque de manejo de error
         printf("_division_by_zero_error_%d:\n", current_label);
         // Aquí podrías llamar a una función que imprima un error.
         // Por ahora, simplemente terminamos el programa.
-        printf("    mov $136, %%edi\n"); // Código de error que quieras usar
+        printf("    movl $136, %%edi\n"); // Código de error que quieras usar
         printf("    call exit\n");
-
+        printf("\n");
         printf("_division_ok_%d:\n", current_label);
-
+        printf("    # --- Fin de bloque de división/módulo ---\n");
+        printf("\n");
         return; // Termina la función aquí
     }
 
     // --- CÓDIGO ORIGINAL PARA OTRAS OPERACIONES (add, sub, imul) ---
     // (Este código está bien y no necesita cambios)
+    printf("    # Operación binaria: %s\n", op);
     if (a->is_global)
-        printf("    mov %s(%%rip), %%rax\n", a->name);
+        printf("    movq %s(%%rip), %%rax\n", a->name);
     else
-        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+        printf("    movq %d(%%rbp), %%rax\n", a->offset);
 
     if (b->is_global)
         printf("    %s %s(%%rip), %%rax\n", op, b->name);
@@ -418,9 +436,11 @@ void generateBinaryOp(IRCode *inst, const char *op) {
         printf("    %s %d(%%rbp), %%rax\n", op, b->offset);
 
     if (r->is_global)
-        printf("    mov %%rax, %s(%%rip)\n", r->name);
+        printf("    movq %%rax, %s(%%rip)\n", r->name);
     else
-        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", r->offset);
+
+    printf("\n");
 }
 
 /**
@@ -430,24 +450,26 @@ void generateBinaryOp(IRCode *inst, const char *op) {
 void generateUminus(IRCode *inst) {
     Symbol *src = inst->arg1;    // Símbolo de origen (el que se va a negar)
     Symbol *dest = inst->result; // Símbolo de destino (donde se guarda el resultado)
-
+    printf("    # Operación unaria: negación de '%s'\n", src->name);
     // 1. Cargar el valor del operando 'src' en el registro %rax.
     if (src->is_global) {
-        printf("    mov %s(%%rip), %%rax\n", src->name);
+        printf("    movq %s(%%rip), %%rax\n", src->name);
     } else {
-        printf("    mov %d(%%rbp), %%rax\n", src->offset);
+        printf("    movq %d(%%rbp), %%rax\n", src->offset);
     }
 
     // 2. Aplicar la instrucción NEG a %rax.
     // Esto calcula el complemento a dos del valor en el registro.
-    printf("    neg %%rax\n");
+    printf("    negq %%rax\n");
 
     // 3. Guardar el resultado (que ahora está en %rax) en el destino 'dest'.
     if (dest->is_global) {
-        printf("    mov %%rax, %s(%%rip)\n", dest->name);
+        printf("    movq %%rax, %s(%%rip)\n", dest->name);
     } else {
-        printf("    mov %%rax, %d(%%rbp)\n", dest->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", dest->offset);
     }
+
+    printf("\n");
 }
 
 void generateLogicalOp(IRCode *inst, const char *op) {
@@ -456,31 +478,34 @@ void generateLogicalOp(IRCode *inst, const char *op) {
     Symbol *r = inst->result;
 
     // === NOT bit a bit ===
-    if (strcmp(op, "not") == 0) {
+    if (strcmp(op, "notq") == 0) {
+        printf("    # Operación lógica: NOT '%s'\n", a->name);
         // Cargar arg1 en %rax
         if (a->is_global)
-            printf("    mov %s(%%rip), %%rax\n", a->name);
+            printf("    movq %s(%%rip), %%rax\n", a->name);
         else
-            printf("    mov %d(%%rbp), %%rax\n", a->offset);
+            printf("    movq %d(%%rbp), %%rax\n", a->offset);
 
         // Aplicar NOT bit a bit
-        printf("    not %%rax\n");
+        printf("    notq %%rax\n");
 
         // Guardar resultado
         if (r->is_global)
-            printf("    mov %%rax, %s(%%rip)\n", r->name);
+            printf("    movq %%rax, %s(%%rip)\n", r->name);
         else
-            printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+            printf("    movq %%rax, %d(%%rbp)\n", r->offset);
+        
+        printf("\n");
         return;
     }
 
     // === AND / OR ===
-
+    printf("    # Operación lógica: %s\n", op);
     // Cargar arg1 en %rax
     if (a->is_global)
-        printf("    mov %s(%%rip), %%rax\n", a->name);
+        printf("    movq %s(%%rip), %%rax\n", a->name);
     else
-        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+        printf("    movq %d(%%rbp), %%rax\n", a->offset);
 
     // Aplicar operación con arg2
     if (b->is_global)
@@ -490,9 +515,11 @@ void generateLogicalOp(IRCode *inst, const char *op) {
 
     // Guardar resultado
     if (r->is_global)
-        printf("    mov %%rax, %s(%%rip)\n", r->name);
+        printf("    movq %%rax, %s(%%rip)\n", r->name);
     else
-        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", r->offset);
+    
+    printf("\n");
 }
 
 void generateCompare(IRCode *inst, const char *set_op) {
@@ -500,25 +527,28 @@ void generateCompare(IRCode *inst, const char *set_op) {
     Symbol *b = inst->arg2;
     Symbol *r = inst->result;
 
+    printf("    # Comparación\n");
     // Cargar arg1 en %rax
     if (a->is_global)
-        printf("    mov %s(%%rip), %%rax\n", a->name);
+        printf("    movq %s(%%rip), %%rax\n", a->name);
     else
-        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+        printf("    movq %d(%%rbp), %%rax\n", a->offset);
 
     // Comparar con arg2
     if (b->is_global)
-        printf("    cmp %s(%%rip), %%rax\n", b->name);
+        printf("    cmpq %s(%%rip), %%rax\n", b->name);
     else
-        printf("    cmp %d(%%rbp), %%rax\n", b->offset);
-
+        printf("    cmpq %d(%%rbp), %%rax\n", b->offset);
+    printf("\n");
+    printf("    # Guardar resultado booleano de la comparación\n");
     // Guardar resultado (0 o 1)
     printf("    %s %%al\n", set_op);
     printf("    movzbq %%al, %%rax\n");
     if (r->is_global)
-        printf("    mov %%rax, %s(%%rip)\n", r->name);
+        printf("    movq %%rax, %s(%%rip)\n", r->name);
     else
-        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", r->offset);
+    printf("\n");
 }
 
 
@@ -528,9 +558,10 @@ void generateCompare(IRCode *inst, const char *set_op) {
 void generateStorage(IRCode *inst) {
     Symbol *literal = inst->arg1; // El símbolo que contiene el valor literal.
     Symbol *dest = inst->result;    // El temporal de destino en la pila.
-
+    printf("    # Almacena el valor literal %d en el temporal '%s'\n", literal->valor.value, dest->name);
     // Genera la instrucción para mover el valor inmediato al offset del temporal.
-    printf("    mov $%d, %d(%%rbp)\n", literal->valor.value, dest->offset);
+    printf("    movq $%d, %d(%%rbp)\n", literal->valor.value, dest->offset);
+    printf("\n");
 }
 
 // =============================
@@ -539,18 +570,20 @@ void generateStorage(IRCode *inst) {
 void generateAssign(IRCode *inst) {
     Symbol *a = inst->arg1; // DEBERIA SER RAX
     Symbol *r = inst->result;
+    printf("    # Asignación: '%s' = '%s'\n", r->name, a->name);
 
     if (a->is_global) {
-        printf("    mov %s(%%rip), %%rax\n", a->name);
+        printf("    movq %s(%%rip), %%rax\n", a->name);
     } else {
-        printf("    mov %d(%%rbp), %%rax\n", a->offset);
+        printf("    movq %d(%%rbp), %%rax\n", a->offset);
     }
     // Guardar valor en destino
     if (r->is_global) {
-        printf("    mov %%rax, %s(%%rip)\n", r->name);
+        printf("    movq %%rax, %s(%%rip)\n", r->name);
     } else {
-        printf("    mov %%rax, %d(%%rbp)\n", r->offset);
+        printf("    movq %%rax, %d(%%rbp)\n", r->offset);
     }
+    printf("\n");
 }
 
 // =============================
@@ -559,10 +592,13 @@ void generateAssign(IRCode *inst) {
 void generateLabel(IRCode *inst) {
     if (inst->op == IR_FMETHOD) printf("f%s:\n", inst->result->name);
     else printf("%s:\n", inst->result->name);
+    printf("\n");
 }
 
 void generateGoto(IRCode *inst) {
+    printf("    # Salto incondicional a la etiqueta '%s'\n", inst->result->name);
     printf("    jmp %s\n", inst->result->name);
+    printf("\n");
 }
 
 // =============================
@@ -572,29 +608,34 @@ void generateIf(IRCode *inst) {
     Symbol *cond = inst->arg1;
     Symbol *label = inst->result;
 
+    printf("    # Condición del IF\n");
     // Cargar condición
     if (cond->is_global)
-        printf("    mov %s(%%rip), %%rax\n", cond->name);
+        printf("    movq %s(%%rip), %%rax\n", cond->name);
     else
-        printf("    mov %d(%%rbp), %%rax\n", cond->offset);
+        printf("    movq %d(%%rbp), %%rax\n", cond->offset);
 
-    printf("    cmp $0, %%rax\n");
+    printf("    cmpq $0, %%rax\n");
+    printf("    # Si la condición es verdadera (no es cero), salta a '%s'\n", label->name);
     printf("    jne %s\n", label->name); // salta si distinto de 0
+    printf("\n");
 }
 
 // =============================
 //  Return
 // =============================
 void generateReturn(IRCode *inst) {
+    printf("    # Preparando el retorno de la función\n");
     if (inst->result != NULL) {
         Symbol *res = inst->result;
         if (res->is_global)
-            printf("    mov %s(%%rip), %%rax\n", res->name);
+            printf("    movq %s(%%rip), %%rax\n", res->name);
         else
-            printf("    mov %d(%%rbp), %%rax\n", res->offset);
+            printf("    movq %d(%%rbp), %%rax\n", res->offset);
     }
     printf("    leave\n");
     printf("    ret\n");
+    printf("\n");
 }
 
 
