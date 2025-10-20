@@ -1,8 +1,8 @@
 #include "Assembler.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <intermediate.h>
-#include <globals.h>
+#include <Intermediate.h>
+#include <Globals.h>
 
 extern SymbolNode *decl_vars;
 

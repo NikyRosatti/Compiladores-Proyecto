@@ -14,7 +14,7 @@
 #include "Stack.h"
 #include "Tree.h"
 #include "SymbolTable.h"
-#include "intermediate.h"
+#include "Intermediate.h"
 #include "Assembler.h"
 #include "Error.h"
 

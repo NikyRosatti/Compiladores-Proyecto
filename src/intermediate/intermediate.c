@@ -1,5 +1,5 @@
 #include "Tree.h"
-#include "intermediate.h"
+#include "Intermediate.h"
 
 
 

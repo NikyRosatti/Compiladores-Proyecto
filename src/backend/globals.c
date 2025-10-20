@@ -1,4 +1,4 @@
-#include "globals.h"
+#include "Globals.h"
 
 SymbolNode *decl_vars = NULL;
 
