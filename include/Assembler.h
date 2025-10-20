@@ -1,8 +1,8 @@
 #ifndef ASSEMBLER_H
 #define ASSEMBLER_H
 #define DEBUG_OFFSETS
-#include "tree.h"
-#include "symbol.h"
+#include "Tree.h"
+#include "Symbol.h"
 #include "intermediate.h"
 #include "globals.h"
 

@@ -1,7 +1,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "symbol.h"
+#include "Symbol.h"
 #include <stdio.h>
 #include <stdlib.h>
 
