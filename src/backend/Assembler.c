@@ -237,9 +237,6 @@ void generateAssembly(IRList *irlist) {
     // Reservar espacio local si es necesario (por ahora fijo)
     //printf("    sub $128, %%rsp\n\n");
 
-    // Epílogo
-    printf("\n    leave\n");
-    printf("    ret\n");
 }
 
 // Recorre la lista de IR para recolectar variables globales
@@ -304,7 +301,6 @@ void generateInstruction(IRCode *inst) {
         case IR_LABEL: generateLabel(inst); break;
         case IR_METHOD: generateLabel(inst); generateEnter(inst); break;
         case IR_GOTO: generateGoto(inst); break;
-        case IR_IF: generateIf(inst); break;
         case IR_RETURN: generateReturn(inst); break;
         default:
             printf("    # [WARN] Operación IR no implementada: %d\n", inst->op);
@@ -594,28 +590,21 @@ void generateLabel(IRCode *inst) {
 }
 
 void generateGoto(IRCode *inst) {
-    printf("    # Salto incondicional a la etiqueta '%s'\n", inst->result->name);
-    printf("    jmp %s\n", inst->result->name);
-    printf("\n");
-}
-
-// =============================
-// If (salto condicional simple)
-// =============================
-void generateIf(IRCode *inst) {
-    Symbol *cond = inst->arg1;
-    Symbol *label = inst->result;
-
-    printf("    # Condición del IF\n");
-    // Cargar condición
-    if (cond->is_global)
-        printf("    movq %s(%%rip), %%rax\n", cond->name);
-    else
-        printf("    movq %d(%%rbp), %%rax\n", cond->offset);
-
-    printf("    cmpq $0, %%rax\n");
-    printf("    # Si la condición es verdadera (no es cero), salta a '%s'\n", label->name);
-    printf("    jne %s\n", label->name); // salta si distinto de 0
+    if (inst->arg1 != NULL) {
+        if (inst->arg1->is_global){
+            char *name = inst->arg1->name;
+            printf("    cmpq $0, %s(%%rip);\n", name);
+        } else {
+            int offset = inst->arg1->offset;
+            printf("    cmpq $0, %d(%%rbp);\n", offset);
+        }
+        
+        printf("    # Salto CONDICIONAL a la etiqueta '%s'\n", inst->result->name);
+        printf("    jne %s\n", inst->result->name);
+    } else {
+        printf("    # Salto INCONDICIONAL a la etiqueta '%s'\n", inst->result->name);
+        printf("    jmp %s\n", inst->result->name);
+    }
     printf("\n");
 }
 

@@ -1,20 +1,13 @@
 Program {
-    integer compute(integer a, integer b, integer c, integer d, integer e, integer f, integer g) {
-        integer x = a + b;
-        integer y = c + d;
-        
-        if (x > y) then {
+    void main() {
+        integer x = 1;
+        integer y = 0;
+        while (x > y) {
             integer temp = x;
             x = y;
             y = temp;
+            x = x-1;
         }
-        
-        integer result = x + y + e + f + g;
-        return result;
-    }
-    
-    void main() {
-        integer answer = compute(1, 2, 3, 4, 5, 6, 7);
         return;
     }
 }
