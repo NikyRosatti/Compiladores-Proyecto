@@ -227,8 +227,6 @@ void generateAssembly(IRList *irlist) {
     // seccion text
     printf(".text\n");
     printf(".globl main\n");
-    printf("    pushq %%rbp\n");
-    printf("    movq %%rsp, %%rbp\n");
 
     // Iterar sobre todas las instrucciones
     for (int i = 0; i < irlist->size; i++) {
