@@ -316,21 +316,38 @@ void generateLoad(IRCode *inst) {
     Symbol *src = inst->arg1;
     Symbol *dst = inst->result;
 
-    printf("    # Carga el valor de la variable '%s' en un temporal\n", src->name);
-
-    // Cargar en %rax
-    if (src->is_global)
-        printf("    movq %s(%%rip), %%rax\n", src->name);
-    else
-        printf("    movq %d(%%rbp), %%rax\n", src->offset);
-
-    // Guardar en destino
-    if (dst->is_global)
-        printf("    movq %%rax, %s(%%rip)\n", dst->name);
-    else
+    if (src->is_param == 1)
+    {
+        printf("    # Carga el valor del parámetro '%s' en un temporal\n", src->name);
+        
+        if (src->param_index>=6)
+        {
+            printf("    movq %d(%%rbp), %%rax\n", src->offset);    
+        } else {
+            printf("    movq %s, %%rax\n", PARAM_REGISTERS[src->param_index]);
+        }
+        
         printf("    movq %%rax, %d(%%rbp)\n", dst->offset);
 
-    printf("\n");
+        printf("\n");
+    } else {
+
+        printf("    # Carga el valor de la variable '%s' en un temporal\n", src->name);
+
+        // Cargar en %rax
+        if (src->is_global)
+            printf("    movq %s(%%rip), %%rax\n", src->name);
+        else
+            printf("    movq %d(%%rbp), %%rax\n", src->offset);
+
+        // Guardar en destino
+        if (dst->is_global)
+            printf("    movq %%rax, %s(%%rip)\n", dst->name);
+        else
+            printf("    movq %%rax, %d(%%rbp)\n", dst->offset);
+
+        printf("\n");
+    }
 }
 
 void generateCall(IRCode *inst) {
@@ -344,9 +361,9 @@ void generateCall(IRCode *inst) {
     if (r) {
         printf("    # Guardar el valor de retorno (desde RAX)\n");
         if (r->is_global)
-            printf("    movq %%eax, %s(%%rip)\n", r->name);
+            printf("    movq %%rax, %s(%%rip)\n", r->name);
         else
-            printf("    movq %%eax, %d(%%rbp)\n", r->offset);
+            printf("    movq %%rax, %d(%%rbp)\n", r->offset);
     }
     printf("\n");
 }
@@ -556,11 +573,34 @@ void generateCompare(IRCode *inst, const char *set_op) {
 void generateStorage(IRCode *inst) {
     Symbol *literal = inst->arg1; // El símbolo que contiene el valor literal.
     Symbol *dest = inst->result;    // El temporal de destino en la pila.
+
+    if (literal->is_param == 1)
+    {
+        // Genera la instrucción para mover el valor inmediato al offset del parámetro.
+        
+        if (literal->param_index>=6)
+        {
+            printf("    # Almacena el valor literal %d en el parámetro \n", literal->valor.value);
+            printf("    pushq $%d \n", literal->valor.value);
+        } else {
+            printf("    # Almacena el valor literal %d en el parámetro '%s'\n", literal->valor.value, PARAM_REGISTERS[literal->param_index]);
+            printf("    movq $%d, %s\n", literal->valor.value, PARAM_REGISTERS[literal->param_index]);
+        }
+        
+
+        
+        printf("\n");
+        return;
+    } else {
+    
+
     printf("    # Almacena el valor literal %d en el temporal '%s'\n", literal->valor.value, dest->name);
     // Genera la instrucción para mover el valor inmediato al offset del temporal.
     printf("    movq $%d, %d(%%rbp)\n", literal->valor.value, dest->offset);
     printf("\n");
+    }
 }
+
 
 // =============================
 // ASSIGN: asigna valor de una variable o temporal

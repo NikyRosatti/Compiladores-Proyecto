@@ -35,6 +35,8 @@ Symbol* newLabel() {
     return s;
 }
 
+int param = 0;
+int index_param = 0;
 
 Symbol* gen_code(Tree *node, IRList *list) {
     if (!node) return NULL;
@@ -55,6 +57,10 @@ Symbol* gen_code(Tree *node, IRList *list) {
         case NODE_INT:
         case NODE_TRUE:
         case NODE_FALSE: {
+
+            
+            
+
             // 1. Crear un nuevo símbolo temporal para guardar el valor del literal.
             Symbol *temp_sym = newTempSymbol();
 
@@ -70,6 +76,18 @@ Symbol* gen_code(Tree *node, IRList *list) {
 
             // 3. Emitir una instrucción para ALMACENAR el valor literal en el temporal.
             //    Esta es la clave: le decimos al generador que mueva el número a la pila.
+            if (param == 1)
+            {
+                literal_val_sym->is_param = 1;
+                literal_val_sym->param_index = index_param;
+                index_param++;
+                if (index_param >= 6)
+                {
+                    literal_val_sym->offset = 16 + (8 * (index_param -6));
+                }
+                
+            }
+            
             ir_emit(list, IR_STORAGE, literal_val_sym, NULL, temp_sym);
 
             // 4. Devolver el símbolo temporal, que ahora contiene el valor.
@@ -222,10 +240,17 @@ Symbol* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_METHOD_CALL: {
+
+            param = 1;
+            index_param = 0;
+
             // Generar args
             Symbol *args = gen_code(node->right, list);
             Symbol *t = newTempSymbol();
             ir_emit(list, IR_CALL, node->sym, args, t);
+            param = 1;
+            index_param = 0;
+
             return t;
         }
 
@@ -240,6 +265,8 @@ Symbol* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_METHOD: {
+
+
             // ES UN METODO EXTERNO
             if (node->right == NULL) {
                 ir_emit(list, IR_METH_EXT, NULL, NULL, node->sym);
