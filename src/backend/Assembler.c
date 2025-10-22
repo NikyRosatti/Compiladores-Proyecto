@@ -649,12 +649,12 @@ void generateGoto(IRCode *inst) {
 // =============================
 void generateReturn(IRCode *inst) {
     printf("    # Preparando el retorno de la función\n");
-    if (inst->result != NULL) {
-        Symbol *res = inst->result;
-        if (res->is_global)
-            printf("    movq %s(%%rip), %%rax\n", res->name);
+    if (inst->arg1 != NULL) {
+        Symbol *arg = inst->arg1;
+        if (arg->is_global)
+            printf("    movq %s(%%rip), %%rax\n", arg->name);
         else
-            printf("    movq %d(%%rbp), %%rax\n", res->offset);
+            printf("    movq %d(%%rbp), %%rax\n", arg->offset);
     }
     printf("    leave\n");
     printf("    ret\n");
