@@ -629,10 +629,10 @@ void generateGoto(IRCode *inst) {
     if (inst->arg1 != NULL) {
         if (inst->arg1->is_global){
             char *name = inst->arg1->name;
-            printf("    cmpq $0, %s(%%rip);\n", name);
+            printf("    cmpq $1, %s(%%rip);\n", name);
         } else {
             int offset = inst->arg1->offset;
-            printf("    cmpq $0, %d(%%rbp);\n", offset);
+            printf("    cmpq $1, %d(%%rbp);\n", offset);
         }
         
         printf("    # Salto CONDICIONAL a la etiqueta '%s'\n", inst->result->name);
