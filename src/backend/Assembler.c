@@ -14,7 +14,7 @@ static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *cu
  * Calcula los offsets de parámetros y variables locales para cada método.
  * 
  * VARIABLES GLOBALES:
- * - No tienen offset (se acceden por nombre/label en la sección .data o .bss)
+ * - No tienen offset (se acceden por nombre/label en la sección .data)
  * - Se marcan con is_global = 1
  * 
  * BLOQUES ANIDADOS (if, while, for):
@@ -220,9 +220,6 @@ void generateAssembly(IRList *irlist) {
     // secciones de declaracion e inicializacion de variables
     printf(".data\n");
     print_globals_data(decl_vars);
-    //no hay bss por la decision
-    //printf("    .bss\n");
-    //print_globals_bss(decl_vars);
 
     // seccion text
     printf(".text\n");
