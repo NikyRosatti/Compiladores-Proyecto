@@ -402,15 +402,14 @@ void generateBinaryOp(IRCode *inst, const char *op) {
         printf("\n");
         // 4. Bloque de manejo de error
         printf("_division_by_zero_error_%d:\n", current_label);
-        // Aquí podrías llamar a una función que imprima un error.
-        // Por ahora, simplemente terminamos el programa.
-        printf("    movl $136, %%edi\n"); // Código de error que quieras usar
+        // terminamos el programa.
+        printf("    movl $136, %%edi\n");
         printf("    call exit\n");
         printf("\n");
         printf("_division_ok_%d:\n", current_label);
         printf("    # --- Fin de bloque de división/módulo ---\n");
         printf("\n");
-        return; // Termina la función aquí
+        return;
     }
 
     // --- CÓDIGO ORIGINAL PARA OTRAS OPERACIONES (add, sub, imul) ---
