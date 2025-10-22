@@ -1,5 +1,5 @@
 #include "Tree.h"
-#include "intermediate.h"
+#include "Intermediate.h"
 
 
 
@@ -8,7 +8,7 @@ static const char *ir_names[] = {
     "LOAD","DECL", "STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO","IF", "IFELSE", "WHILE", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
+    "LABEL","GOTO", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
 };
 
 static int tempCount = 0;
@@ -420,7 +420,6 @@ void ir_print(IRList *list) {
             case IR_CALL:
             case IR_NOT:
             case IR_UMINUS:
-            case IR_IF:
             case IR_GOTO:
                 if (code->arg1) {
                     if (code->arg1->name)

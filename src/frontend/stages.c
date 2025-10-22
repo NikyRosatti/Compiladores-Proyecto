@@ -1,4 +1,4 @@
-#include "stages.h"
+#include "Stages.h"
 
 int run_scan_stage(FILE *f, bool debug) {
     int tok;
@@ -17,7 +17,7 @@ int run_scan_stage(FILE *f, bool debug) {
     return lexico_valido ? 0 : 1;
 }
 
-int run_parse_stage(Config *cfg, FILE *f) {
+int run_parse_stage(Config *cfg) {
     if (cfg->debug) yydebug = 1;
 
     if (yyparse() != 0) {

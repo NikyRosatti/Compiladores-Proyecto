@@ -1,8 +1,8 @@
 #include "Assembler.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <intermediate.h>
-#include <globals.h>
+#include <Intermediate.h>
+#include <Globals.h>
 
 extern SymbolNode *decl_vars;
 
@@ -14,7 +14,7 @@ static void calculate_offsets_helper(Tree *node, int *current_offset, Symbol *cu
  * Calcula los offsets de parámetros y variables locales para cada método.
  * 
  * VARIABLES GLOBALES:
- * - No tienen offset (se acceden por nombre/label en la sección .data o .bss)
+ * - No tienen offset (se acceden por nombre/label en la sección .data)
  * - Se marcan con is_global = 1
  * 
  * BLOQUES ANIDADOS (if, while, for):
@@ -220,9 +220,6 @@ void generateAssembly(IRList *irlist) {
     // secciones de declaracion e inicializacion de variables
     printf(".data\n");
     print_globals_data(decl_vars);
-    //no hay bss por la decision
-    //printf("    .bss\n");
-    //print_globals_bss(decl_vars);
 
     // seccion text
     printf(".text\n");
@@ -237,9 +234,6 @@ void generateAssembly(IRList *irlist) {
     // Reservar espacio local si es necesario (por ahora fijo)
     //printf("    sub $128, %%rsp\n\n");
 
-    // Epílogo
-    printf("\n    leave\n");
-    printf("    ret\n");
 }
 
 // Recorre la lista de IR para recolectar variables globales
@@ -304,7 +298,6 @@ void generateInstruction(IRCode *inst) {
         case IR_LABEL: generateLabel(inst); break;
         case IR_METHOD: generateLabel(inst); generateEnter(inst); break;
         case IR_GOTO: generateGoto(inst); break;
-        case IR_IF: generateIf(inst); break;
         case IR_RETURN: generateReturn(inst); break;
         default:
             printf("    # [WARN] Operación IR no implementada: %d\n", inst->op);
@@ -426,15 +419,14 @@ void generateBinaryOp(IRCode *inst, const char *op) {
         printf("\n");
         // 4. Bloque de manejo de error
         printf("_division_by_zero_error_%d:\n", current_label);
-        // Aquí podrías llamar a una función que imprima un error.
-        // Por ahora, simplemente terminamos el programa.
-        printf("    movl $136, %%edi\n"); // Código de error que quieras usar
+        // terminamos el programa.
+        printf("    movl $136, %%edi\n");
         printf("    call exit\n");
         printf("\n");
         printf("_division_ok_%d:\n", current_label);
         printf("    # --- Fin de bloque de división/módulo ---\n");
         printf("\n");
-        return; // Termina la función aquí
+        return;
     }
 
     // --- CÓDIGO ORIGINAL PARA OTRAS OPERACIONES (add, sub, imul) ---
@@ -634,28 +626,21 @@ void generateLabel(IRCode *inst) {
 }
 
 void generateGoto(IRCode *inst) {
-    printf("    # Salto incondicional a la etiqueta '%s'\n", inst->result->name);
-    printf("    jmp %s\n", inst->result->name);
-    printf("\n");
-}
-
-// =============================
-// If (salto condicional simple)
-// =============================
-void generateIf(IRCode *inst) {
-    Symbol *cond = inst->arg1;
-    Symbol *label = inst->result;
-
-    printf("    # Condición del IF\n");
-    // Cargar condición
-    if (cond->is_global)
-        printf("    movq %s(%%rip), %%rax\n", cond->name);
-    else
-        printf("    movq %d(%%rbp), %%rax\n", cond->offset);
-
-    printf("    cmpq $0, %%rax\n");
-    printf("    # Si la condición es verdadera (no es cero), salta a '%s'\n", label->name);
-    printf("    jne %s\n", label->name); // salta si distinto de 0
+    if (inst->arg1 != NULL) {
+        if (inst->arg1->is_global){
+            char *name = inst->arg1->name;
+            printf("    cmpq $0, %s(%%rip);\n", name);
+        } else {
+            int offset = inst->arg1->offset;
+            printf("    cmpq $0, %d(%%rbp);\n", offset);
+        }
+        
+        printf("    # Salto CONDICIONAL a la etiqueta '%s'\n", inst->result->name);
+        printf("    jne %s\n", inst->result->name);
+    } else {
+        printf("    # Salto INCONDICIONAL a la etiqueta '%s'\n", inst->result->name);
+        printf("    jmp %s\n", inst->result->name);
+    }
     printf("\n");
 }
 

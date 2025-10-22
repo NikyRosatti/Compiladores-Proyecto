@@ -1,7 +1,7 @@
 #ifndef ARGS_H
 #define ARGS_H
 
-#include "utils.h"
+#include "Utils.h"
 
 typedef struct {
     char *input_file;
