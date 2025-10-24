@@ -45,7 +45,7 @@ for i in "${!TEST_DIRS[@]}"; do
             ext="out"
         fi
         
-        ./bin/c-tds -t $TARGET $f > $RES_DIR/$base.ext 2>&1
+        ./bin/c-tds -t $TARGET $f > $RES_DIR/$base.$ext 2>&1
 
         code=$?
 
