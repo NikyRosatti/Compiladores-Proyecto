@@ -363,6 +363,9 @@ void generateCall(IRCode *inst) {
 
 void generateEnter(IRCode *inst) {
     int space = inst->result ? inst->result->total_stack_space : 0;
+    if (space % 16 != 0) {
+        space += 8;
+    }
     printf("    # Prólogo del método: crear stack frame y reservar %d bytes\n", space);
     printf("    enter $(%d), $0\n", space);
     printf("\n");
