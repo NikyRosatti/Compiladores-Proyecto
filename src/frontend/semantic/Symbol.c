@@ -54,3 +54,31 @@ Symbol *createSymbolCall(const char *name, SymbolKind kind) {
 
     return sym;
 }
+
+/**
+ * Crea un símbolo para un valor literal (anónimo).
+ * @param value El valor numérico del literal (e.g., 123, 1 para true, 0 para false).
+ * @param type El tipo de dato del símbolo (TYPE_INT o TYPE_BOOL).
+ * @return Un puntero al nuevo Symbol.
+ */
+Symbol* createLiteralSymbol(int value, SymbolType type) {
+    Symbol *s = malloc(sizeof(Symbol));
+    if (!s) {
+        fprintf(stderr, "Error: sin memoria para símbolo literal\n");
+        exit(1);
+    }
+
+    s->name = NULL;         // Los literales no tienen nombre.
+    s->type = type;
+    s->valor.value = value;
+    
+    // Inicializa otros campos a valores por defecto seguros.
+    s->kind = LITERAL; 
+    s->node = NULL;
+    s->offset = 0;
+    s->is_param = 0;
+    s->is_global = 0;
+    
+
+    return s;
+}

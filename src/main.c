@@ -1,4 +1,4 @@
-#include "stages.h"
+#include "Stages.h"
 
 int main(int argc, char **argv) {
     Config cfg;
@@ -28,12 +28,12 @@ int main(int argc, char **argv) {
     if (strcasecmp(cfg.target, "scan") == 0)
         result = run_scan_stage(f, cfg.debug);
     else if (strcasecmp(cfg.target, "parse") == 0)
-        result = run_parse_stage(&cfg, f);
+        result = run_parse_stage(&cfg);
     else if (strcasecmp(cfg.target, "codinter") == 0) {
-        if ((result = run_parse_stage(&cfg, f)) == 0)
+        if ((result = run_parse_stage(&cfg)) == 0)
             result = run_codinter_stage();
     } else if (strcasecmp(cfg.target, "assembly") == 0) {
-        if ((result = run_parse_stage(&cfg, f)) == 0)
+        if ((result = run_parse_stage(&cfg)) == 0)
             result = run_assembly_stage(f, cfg.debug);
     } else {
         fprintf(stderr, "Target desconocido: %s\n", cfg.target);

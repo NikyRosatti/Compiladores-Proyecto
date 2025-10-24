@@ -1,4 +1,4 @@
-#include "args.h"
+#include "Args.h"
 
 void print_usage() {
     printf("Uso: c-tds [opcion] archivo.ctds\n");

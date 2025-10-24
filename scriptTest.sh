@@ -38,7 +38,14 @@ for i in "${!TEST_DIRS[@]}"; do
     for f in $TEST_DIR/*.ctds; do
         total=$((total+1))
         base=$(basename $f .ctds)
-        ./bin/c-tds -t $TARGET $f > $RES_DIR/$base.out 2>&1
+
+        if [ "$TARGET" = "assembly" ]; then
+            ext="s"
+        else
+            ext="out"
+        fi
+        
+        ./bin/c-tds -t $TARGET $f > $RES_DIR/$base.$ext 2>&1
 
         code=$?
 
