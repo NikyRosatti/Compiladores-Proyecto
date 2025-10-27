@@ -265,7 +265,7 @@ void generateInstruction(IRCode *inst) {
     switch (inst->op) {
         case IR_LOAD: generateLoad(inst); break;
         case IR_METH_EXT: break;
-        case IR_PARAM: break;
+        case IR_PARAM:generateParam(inst); break;
         ///// estos de arriba no tienen instrucciones en Assembly
         case IR_STORAGE: generateStorage(inst); break;
         case IR_STORE: generateAssign(inst); break;
@@ -311,14 +311,9 @@ void generateLoad(IRCode *inst) {
 
     if (src->is_param == 1)
     {
-        printf("    # Carga el valor del parámetro '%s' en un temporal\n", src->name);
+        printf("    # Carga el valor del parámetro '%s' en un temporal AAAAAAAAAAAAAAAAAAAAAAA\n", src->name);
         
-        if (src->param_index>=6)
-        {
-            printf("    movq %d(%%rbp), %%rax\n", src->offset);    
-        } else {
-            printf("    movq %s, %%rax\n", PARAM_REGISTERS[src->param_index]);
-        }
+        printf("    movq %d(%%rbp), %%rax\n", src->offset);    
         
         printf("    movq %%rax, %d(%%rbp)\n", dst->offset);
 
@@ -569,31 +564,11 @@ void generateStorage(IRCode *inst) {
     Symbol *literal = inst->arg1; // El símbolo que contiene el valor literal.
     Symbol *dest = inst->result;    // El temporal de destino en la pila.
 
-    if (literal->is_param == 1)
-    {
-        // Genera la instrucción para mover el valor inmediato al offset del parámetro.
-        
-        if (literal->param_index>=6)
-        {
-            printf("    # Almacena el valor literal %d en el parámetro \n", literal->valor.value);
-            printf("    pushq $%d \n", literal->valor.value);
-        } else {
-            printf("    # Almacena el valor literal %d en el parámetro '%s'\n", literal->valor.value, PARAM_REGISTERS[literal->param_index]);
-            printf("    movq $%d, %s\n", literal->valor.value, PARAM_REGISTERS[literal->param_index]);
-        }
-        
-
-        
-        printf("\n");
-        return;
-    } else {
-    
-
     printf("    # Almacena el valor literal %d en el temporal '%s'\n", literal->valor.value, dest->name);
     // Genera la instrucción para mover el valor inmediato al offset del temporal.
     printf("    movq $%d, %d(%%rbp)\n", literal->valor.value, dest->offset);
     printf("\n");
-    }
+    
 }
 
 
@@ -666,3 +641,30 @@ void generateReturn(IRCode *inst) {
 
 
 // no hay instruccion load equivalente sino que se contempla cuando se reserva espacio al inicio del metodo con enter.
+
+/**
+ * Genera el código para pasar un temporal evaluado como parámetro
+ * a una función.
+ * IR: IR_PARAM <temp_con_valor>, <sym_con_indice>, NULL
+ */
+void generateParam(IRCode *inst) {
+    Symbol *src_temp = inst->arg1; // Temporal que contiene el valor
+    Symbol *param_info = inst->arg2; // Símbolo "dummy" que contiene el índice
+    int index = param_info->valor.value;
+
+    printf("    # Pasa el temporal '%s' (desde %d(%%rbp)) como parámetro %d\n", 
+           src_temp->name, src_temp->offset, index);
+
+    if (index < 6) {
+        // Parámetro 0-5: Mover de la pila temporal al registro
+        // Asumo que PARAM_REGISTERS[] es {"%rdi", "%rsi", ...}
+        const char* reg = PARAM_REGISTERS[index];
+        printf("    movq %d(%%rbp), %s\n", src_temp->offset, reg);
+    } else {
+        // Parámetro 6+: Mover de la pila temporal a la pila de argumentos
+        // (vía %rax)
+        printf("    movq %d(%%rbp), %%rax\n", src_temp->offset);
+        printf("    pushq %%rax\n");
+    }
+    printf("\n");
+}
