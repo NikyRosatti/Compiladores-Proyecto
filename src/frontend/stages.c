@@ -71,6 +71,6 @@ int run_assembly_stage(FILE *f, bool debug) {
     if (debug) printf("[DEBUG] Generando código assembly...\n");
     generateAssembly(&list);
 
-    printf("Código assembly generado correctamente ✔️\n");
+    //printf("Código assembly generado correctamente ✔️\n");
     return 0;
 }

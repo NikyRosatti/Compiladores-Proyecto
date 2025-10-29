@@ -33,7 +33,8 @@ typedef enum {
     IR_METHOD, 
     IR_FMETHOD, 
     IR_METH_EXT,
-    IR_PRINT
+    IR_PRINT,
+    IR_SAVE_PARAM
 } IRInstr;
 
 

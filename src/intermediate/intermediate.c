@@ -8,7 +8,8 @@ static const char *ir_names[] = {
     "LOAD","DECL", "STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
+    "LABEL","GOTO", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT",
+    "PRINT", "SAVE_PARAM"
 };
 
 static int tempCount = 0;
@@ -37,6 +38,37 @@ Symbol* newLabel() {
 
 int param = 0;
 int index_param = 0;
+
+
+/**
+ * @brief Genera el código para los argumentos de un método en orden inverso (R->L)
+ * y emite las instrucciones IR_PARAM con el índice correcto (L->R).
+ * * @param arg_list_node El nodo 'NODE_LIST' que empieza la lista de argumentos.
+ * @param list La lista de IR.
+ * @param current_index El índice del parámetro actual (empezando en 0 para el de más a la izquierda).
+ */
+static void gen_method_args(Tree *arg_list_node, IRList *list, int current_index) {
+    if (!arg_list_node) {
+        return; // Fin de la lista de argumentos
+    }
+
+    // IR AL FONDO DE LA LISTA PRIMERO (DERECHA a IZQUIERDA)
+    gen_method_args(arg_list_node->right, list, current_index + 1);
+
+    // PROCESAR EL NODO ACTUAL (IZQUIERDA)
+    // Evalúa los argumentos de derecha a izquierda.
+    Symbol *arg_value_temp = gen_code(arg_list_node->left, list);
+
+    // Crea un símbolo "dummy" solo para pasar el índice del parámetro
+    Symbol *param_index_sym = malloc(sizeof(Symbol));
+    param_index_sym->name = NULL;
+    param_index_sym->type = TYPE_INT;
+    param_index_sym->valor.value = current_index;
+
+    // Emitir la instrucción IR_PARAM
+    ir_emit(list, IR_PARAM, arg_value_temp, param_index_sym, NULL);
+}
+
 
 Symbol* gen_code(Tree *node, IRList *list) {
     if (!node) return NULL;
@@ -73,20 +105,9 @@ Symbol* gen_code(Tree *node, IRList *list) {
                 literal_val_sym->valor.value = (node->tipo == NODE_TRUE) ? 1 : 0;
             }
             literal_val_sym->name = NULL;
-
+            literal_val_sym->is_param = 0; // Importante: Limpiar este flag
             // 3. Emitir una instrucción para ALMACENAR el valor literal en el temporal.
             //    Esta es la clave: le decimos al generador que mueva el número a la pila.
-            if (param == 1)
-            {
-                literal_val_sym->is_param = 1;
-                literal_val_sym->param_index = index_param;
-                index_param++;
-                if (index_param >= 6)
-                {
-                    literal_val_sym->offset = 16 + (8 * (index_param -6));
-                }
-                
-            }
             
             ir_emit(list, IR_STORAGE, literal_val_sym, NULL, temp_sym);
 
@@ -241,16 +262,23 @@ Symbol* gen_code(Tree *node, IRList *list) {
 
         case NODE_METHOD_CALL: {
 
-            param = 1;
-            index_param = 0;
 
-            // Generar args
-            Symbol *args = gen_code(node->right, list);
+            // El AST parece ser: node->right (NODE_ARGS) -> left (NODE_LIST)
+            Tree *args_node = node->right;
+            Tree *arg_list = (args_node && args_node->left) ? args_node->left : NULL;
+
+            // 1. Generar código para todos los argumentos.
+            //    Esta función los evaluará de DERECHA a IZQUIERDA
+            //    y emitirá las instrucciones IR_PARAM en ese orden.
+            gen_method_args(arg_list, list, 0); // Empezar con índice 0
+
+            // Crea un temporal para el valor de retorno de la función
             Symbol *t = newTempSymbol();
-            ir_emit(list, IR_CALL, node->sym, args, t);
-            param = 1;
-            index_param = 0;
 
+            // Emitir la llamada a la función
+            ir_emit(list, IR_CALL, node->sym, NULL, t);
+
+            // Devolver el temporal que contendrá el resultado
             return t;
         }
 
@@ -275,6 +303,25 @@ Symbol* gen_code(Tree *node, IRList *list) {
                 if (node->sym) {
                     ir_emit(list, IR_METHOD, NULL, NULL, node->sym);
                 }
+
+                Tree *method_decl = node->left;                             // NODE_METHOD_HEADER
+                Tree *args_node = method_decl ? method_decl->right : NULL;  // ARGS
+                Tree *param_list = (args_node && args_node->left) ? args_node->left : NULL;  // Primer LIST
+                
+                while (param_list) {
+                    Tree *param_decl = param_list->left;
+                    if (param_decl && param_decl->sym) {
+                        Symbol *param_sym = param_decl->sym;
+                        
+                        // Solo necesitamos guardar los que vienen por registro (0-5)
+                        if (param_sym->is_param && param_sym->param_index < 6) {
+                            // Usamos arg1 para pasar el símbolo del parámetro
+                            ir_emit(list, IR_SAVE_PARAM, param_sym, NULL, NULL); 
+                        }
+                    }
+                    param_list = param_list->right; // Siguiente parámetro
+                }
+
                 // Cuerpo del método
                 gen_code(node->right, list);
                 ir_emit(list, IR_FMETHOD, NULL, NULL, node->sym);
@@ -416,6 +463,7 @@ void ir_print(IRList *list) {
                 break;
             case IR_STORE:
             case IR_STORAGE:
+            case IR_SAVE_PARAM:
             case IR_LOAD:
             case IR_CALL:
             case IR_NOT:
