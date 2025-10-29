@@ -266,6 +266,7 @@ void generateInstruction(IRCode *inst) {
         case IR_LOAD: generateLoad(inst); break;
         case IR_METH_EXT: break;
         case IR_PARAM:generateParam(inst); break;
+        case IR_SAVE_PARAM: generateSaveParam(inst); break;
         ///// estos de arriba no tienen instrucciones en Assembly
         case IR_STORAGE: generateStorage(inst); break;
         case IR_STORE: generateAssign(inst); break;
@@ -666,5 +667,23 @@ void generateParam(IRCode *inst) {
         printf("    movq %d(%%rbp), %%rax\n", src_temp->offset);
         printf("    pushq %%rax\n");
     }
+    printf("\n");
+}
+
+/**
+ * Guarda un parámetro que llegó por registro en su slot de la pila
+ */
+void generateSaveParam(IRCode *inst) {
+    Symbol *param_sym = inst->arg1;
+
+    if (!param_sym || !param_sym->is_param || param_sym->param_index >= 6) {
+        return; // No debería pasar si gen_code es correcto
+    }
+
+    const char* reg = PARAM_REGISTERS[param_sym->param_index];
+    
+    printf("    # Guardar parámetro '%s' (desde %s) en su stack slot\n", 
+           param_sym->name, reg);
+    printf("    movq %s, %d(%%rbp)\n", reg, param_sym->offset);
     printf("\n");
 }

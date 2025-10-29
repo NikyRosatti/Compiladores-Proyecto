@@ -8,7 +8,8 @@ static const char *ir_names[] = {
     "LOAD","DECL", "STORE","STORAGE", "ADD","SUB", "UMINUS", "MUL","DIV","MOD",
     "AND","OR","NOT",
     "EQ","NEQ","LT","LE","GT","GE",
-    "LABEL","GOTO", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT", "PRINT"
+    "LABEL","GOTO", "RET", "PARAM", "CALL", "METHOD", "F_METHOD", "METH_EXT",
+    "PRINT", "SAVE_PARAM"
 };
 
 static int tempCount = 0;
@@ -302,6 +303,25 @@ Symbol* gen_code(Tree *node, IRList *list) {
                 if (node->sym) {
                     ir_emit(list, IR_METHOD, NULL, NULL, node->sym);
                 }
+
+                Tree *method_decl = node->left;                             // NODE_METHOD_HEADER
+                Tree *args_node = method_decl ? method_decl->right : NULL;  // ARGS
+                Tree *param_list = (args_node && args_node->left) ? args_node->left : NULL;  // Primer LIST
+                
+                while (param_list) {
+                    Tree *param_decl = param_list->left;
+                    if (param_decl && param_decl->sym) {
+                        Symbol *param_sym = param_decl->sym;
+                        
+                        // Solo necesitamos guardar los que vienen por registro (0-5)
+                        if (param_sym->is_param && param_sym->param_index < 6) {
+                            // Usamos arg1 para pasar el símbolo del parámetro
+                            ir_emit(list, IR_SAVE_PARAM, param_sym, NULL, NULL); 
+                        }
+                    }
+                    param_list = param_list->right; // Siguiente parámetro
+                }
+
                 // Cuerpo del método
                 gen_code(node->right, list);
                 ir_emit(list, IR_FMETHOD, NULL, NULL, node->sym);
@@ -443,6 +463,7 @@ void ir_print(IRList *list) {
                 break;
             case IR_STORE:
             case IR_STORAGE:
+            case IR_SAVE_PARAM:
             case IR_LOAD:
             case IR_CALL:
             case IR_NOT:
