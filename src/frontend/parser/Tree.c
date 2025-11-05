@@ -5,8 +5,8 @@
 #include "Symbol.h" 
 #include "Stack.h"  
 #include "Error.h"
-#include "stages.h"
-#include "utils.h"
+#include "Stages.h"
+#include "Utils.h"
 
 extern int semantic_error;   // variable global
 struct Tree;  /* forward declaration */

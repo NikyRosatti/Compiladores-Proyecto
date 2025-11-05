@@ -18,16 +18,16 @@ FLFLAGS=-lfl
 
 OBJS=$(BUILD_DIR)/bison.tab.c \
      $(BUILD_DIR)/lex.yy.c \
-     $(SRC_DIR)/main.c \
+     $(SRC_DIR)/Main.c \
      $(SRC_DIR)/frontend/parser/Tree.c \
      $(SRC_DIR)/frontend/semantic/SymbolTable.c \
      $(SRC_DIR)/utils/Stack.c \
      $(SRC_DIR)/frontend/semantic/Symbol.c \
-	 $(SRC_DIR)/intermediate/intermediate.c \
+	 $(SRC_DIR)/intermediate/Intermediate.c \
 	 $(SRC_DIR)/backend/Assembler.c \
-	 $(SRC_DIR)/utils/args.c \
-	 $(SRC_DIR)/frontend/stages.c \
-	 $(SRC_DIR)/backend/globals.c \
+	 $(SRC_DIR)/utils/Args.c \
+	 $(SRC_DIR)/frontend/Stages.c \
+	 $(SRC_DIR)/backend/Globals.c \
 	 $(SRC_DIR)/frontend/semantic/Error.c
 
 VALID_TARGETS := scan parse codinter assembly
