@@ -71,13 +71,13 @@ Pueden usarse sus formas largas como --target, --debug, --opt.
 Si no se especifica ninguna bandera, se ejecuta en modo **scan**:
 
 ```bash
-./c-tds archivo.ctds
+./bin/c-tds archivo.ctds
 ```
 
 Equivalente a:
 
 ```bash
-./c-tds --target scan archivo.ctds
+./bin/c-tds --target scan archivo.ctds
 ```
 
 ---
@@ -86,20 +86,20 @@ Equivalente a:
 El compilador permite elegir la etapa de análisis a ejecutar:
 
 ```bash
-./c-tds --target <etapa> archivo.ctds
+./bin/c-tds --target <etapa> archivo.ctds
 ```
 
 Donde `<etapa>` puede ser:
 
 - `scan` → Ejecuta el analizador léxico (tokens).
 - `parse` → Ejecuta el análisis sintáctico.
-- `codinter` → Genera código intermedio (simulado).
-- `assembly` → Genera código ensamblador (simulado).
+- `codinter` → Genera código intermedio.
+- `assembly` → Genera código ensamblador.
 
 Ejemplo con debug:
 
 ```bash
-./c-tds -d --target scan tests/correct/TestCorrect1.ctds
+./bin/c-tds -d --target assembly tests/correct/TestCorrect1.ctds > salida.s
 ```
 
 ---
@@ -156,7 +156,7 @@ Cada archivo de prueba genera su salida correspondiente (archivo `.out`) en la c
 Ejemplo:
 
 ```bash
-./c-tds --target hola tests/correct/TestCorrect1.ctds
+./bin/c-tds --target hola tests/correct/TestCorrect1.ctds
 # Salida:
 # Target desconocido: hola
 # Código de salida = 1
