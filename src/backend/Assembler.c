@@ -276,10 +276,25 @@ void collect_globals(IRList *irlist)
         {
         case IR_DECL:
         case IR_STORE:
-            // Solo variables globales fuera de métodos
+            // Solo variables globales
             if (inst->result && inst->result->is_global)
             {
-                add_decl(&decl_vars, inst->result, inst->arg1);
+                int encontrado = 0;
+                SymbolNode *actual = decl_vars;
+    
+                // no agregar si ya existe la variable global en decl_vars
+                while (actual) {
+                    if (actual->sym == inst->result) {
+                        encontrado = 1;
+                        break;
+                    }
+                    actual = actual->next;
+                }
+                
+                // --- Añadir si no se encontró ---
+                if (!encontrado) {
+                    add_decl(&decl_vars, inst->result, inst->arg1);
+                }
             }
             break;
         }
