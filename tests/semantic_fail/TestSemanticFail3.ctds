@@ -1,0 +1,10 @@
+Program {
+    integer hola = 5 + 3;
+    integer chau;
+
+    void main() {
+        chau = hola;
+        integer y = 1;
+        return;
+    }
+}
