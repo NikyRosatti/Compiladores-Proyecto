@@ -242,18 +242,23 @@ void generateAssembly(IRList *irlist)
     collect_globals(irlist);
 
     // secciones de declaracion e inicializacion de variables
-    printf(".data\n");
-    print_globals_data(decl_vars);
+    print_global_sections(decl_vars);
 
     // seccion text
     printf(".text\n");
     printf(".globl main\n");
 
+    Symbol *current_method = NULL; // saber el metodo actual
+
     // Iterar sobre todas las instrucciones
     for (int i = 0; i < irlist->size; i++)
     {
         IRCode *inst = &irlist->codes[i];
-        generateInstruction(inst);
+        if (inst->op == IR_METHOD)
+        {
+            current_method = inst->result;
+        }
+        generateInstruction(inst, current_method);
     }
 
     // Reservar espacio local si es necesario (por ahora fijo)
@@ -275,11 +280,25 @@ void collect_globals(IRList *irlist)
         switch (inst->op)
         {
         case IR_DECL:
-        case IR_STORE:
-            // Solo variables globales fuera de métodos
+            // Solo variables globales
             if (inst->result && inst->result->is_global)
             {
-                add_decl(&decl_vars, inst->result, inst->arg1);
+                int encontrado = 0;
+                SymbolNode *actual = decl_vars;
+    
+                // no agregar si ya existe la variable global en decl_vars
+                while (actual) {
+                    if (actual->sym == inst->result) {
+                        encontrado = 1;
+                        break;
+                    }
+                    actual = actual->next;
+                }
+                
+                // --- Añadir si no se encontró ---
+                if (!encontrado) {
+                    add_decl(&decl_vars, inst->result, inst->arg1);
+                }
             }
             break;
         }
@@ -289,7 +308,7 @@ void collect_globals(IRList *irlist)
 // =============================
 // Implementación helpers
 // =============================
-void generateInstruction(IRCode *inst)
+void generateInstruction(IRCode *inst, Symbol *current_method)
 {
     switch (inst->op)
     {
@@ -304,7 +323,6 @@ void generateInstruction(IRCode *inst)
     case IR_SAVE_PARAM:
         generateSaveParam(inst);
         break;
-    ///// estos de arriba no tienen instrucciones en Assembly
     case IR_STORAGE:
         generateStorage(inst);
         break;
@@ -381,7 +399,7 @@ void generateInstruction(IRCode *inst)
         generateGoto(inst);
         break;
     case IR_RETURN:
-        generateReturn(inst);
+        generateReturn(inst, current_method);
         break;
     default:
         printf("    # [WARN] Operación IR no implementada: %d\n", inst->op);
@@ -757,16 +775,31 @@ void generateGoto(IRCode *inst)
 // =============================
 //  Return
 // =============================
-void generateReturn(IRCode *inst)
+void generateReturn(IRCode *inst, Symbol *current_method)
 {
     printf("    # Preparando el retorno de la función\n");
+    int is_main = 0;
+    if (current_method && strcmp(current_method->name, "main") == 0)
+    {
+        is_main = 1;
+    }
+
     if (inst->arg1 != NULL)
     {
+        if (is_main) {
+            printf("    # Retorno explícito de main\n");
+        }
         Symbol *arg = inst->arg1;
         if (arg->is_global)
             printf("    movq %s(%%rip), %%rax\n", arg->name);
         else
             printf("    movq %d(%%rbp), %%rax\n", arg->offset);
+    } else {
+        if (is_main)
+        {
+            printf("    # Forzando 'exit code 0' para main (sin valor explícito)\n");
+            printf("    movq $0, %%rax\n");
+        }
     }
     printf("    leave\n");
     printf("    ret\n");

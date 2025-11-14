@@ -39,7 +39,7 @@ static const char* PARAM_REGISTERS[] = {
 
 // Prototipos de helpers
 void collect_globals(IRList *irlist);
-void print_globals_data(SymbolNode *decl_vars);
+void print_global_sections(SymbolNode *decl_vars);
 void generateLoad(IRCode *inst);
 void generateStorage(IRCode *inst);
 void generateUminus(IRCode *inst);
@@ -47,11 +47,11 @@ void generateCall(IRCode *inst);
 void generateCompare(IRCode *inst, const char *set_op);
 void generateLogicalOp(IRCode *inst, const char *op);
 void generateEnter(IRCode *inst);
-void generateInstruction(IRCode *inst);
+void generateInstruction(IRCode *inst, Symbol *current_method);
 void generateBinaryOp(IRCode *inst, const char *op);
 void generateAssign(IRCode *inst);
 void generateLabel(IRCode *inst);
 void generateGoto(IRCode *inst);
-void generateReturn(IRCode *inst);
+void generateReturn(IRCode *inst, Symbol *current_method);
 
 #endif // ASSEMBLER_H
