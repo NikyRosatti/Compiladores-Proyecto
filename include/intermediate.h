@@ -4,6 +4,7 @@
 #include "Tree.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef enum {
     IR_LOAD,

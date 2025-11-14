@@ -18,6 +18,6 @@ extern SymbolNode *decl_vars;
 
 /* Funciones para manejar la lista */
 void add_decl(SymbolNode **head, Symbol *sym, Symbol *valor);
-void print_globals(SymbolNode *head);
+void print_global_sections(SymbolNode *head);
 
 #endif /* GLOBALS_H */

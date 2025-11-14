@@ -242,8 +242,7 @@ void generateAssembly(IRList *irlist)
     collect_globals(irlist);
 
     // secciones de declaracion e inicializacion de variables
-    printf(".data\n");
-    print_globals_data(decl_vars);
+    print_global_sections(decl_vars);
 
     // seccion text
     printf(".text\n");
@@ -275,7 +274,6 @@ void collect_globals(IRList *irlist)
         switch (inst->op)
         {
         case IR_DECL:
-        case IR_STORE:
             // Solo variables globales
             if (inst->result && inst->result->is_global)
             {

@@ -242,13 +242,79 @@ Symbol* gen_code(Tree *node, IRList *list) {
         }
 
         case NODE_DECLARATION: {
-            // Si hay inicialización, generarla
-            if (node->right) {
-                Symbol *rhs = gen_code(node->right, list);
-                ir_emit(list, IR_STORE, rhs, NULL, node->sym);
-            } else {
-                // Valor por defecto
-                ir_emit(list, IR_DECL, node->sym, NULL, node->sym);
+            // node->sym es la variable que se declara
+            // node->right es el inicializador (ej. '100' o 'a+b' o NULL)
+
+            if (!node->right)
+            {
+                // Caso: Sin inicialización
+                
+                // Emitir IR_DECL con valor NULL.
+                // 'collect_globals' lo verá y 'print_globals_data'
+                // lo interpretará como '.quad 0'.
+                ir_emit(list, IR_DECL, NULL, NULL, node->sym);
+            }
+            else
+            {
+                // Caso: Con inicialización
+                // Comprobar si es una inicialización constante
+                bool is_static_const = (node->right->tipo == NODE_INT ||
+                                        node->right->tipo == NODE_TRUE ||
+                                        node->right->tipo == NODE_FALSE);
+
+                // Comprobar si la variable es global
+                bool is_global = node->sym->is_global;
+
+                if (is_global && is_static_const)
+                {
+                    // Inicialización Estática Global
+
+                    // Crear un Símbolo Constante para el valor.
+                    Symbol *const_val = malloc(sizeof(Symbol));
+                    if (!const_val) {
+                        fprintf(stderr, "Error de memoria en DECL\n");
+                        break;
+                    }
+
+                    const_val->name = NULL; // Es un literal, no tiene nombre
+                    const_val->type = (node->right->tipo == NODE_INT) ? TYPE_INT : TYPE_BOOL;
+                    const_val->is_param = 0;
+
+                    if (node->right->tipo == NODE_INT)
+                    {
+                        const_val->valor.value = node->right->sym->valor.value;
+                    }
+                    else if (node->right->tipo == NODE_TRUE)
+                    {
+                        const_val->valor.value = 1;
+                    }
+                    else
+                    { // NODE_FALSE
+                        const_val->valor.value = 0;
+                    }
+
+                    // Emitir IR_DECL con el valor constante (en arg1).
+                    //    'collect_globals' usará 'const_val'
+                    ir_emit(list, IR_DECL, const_val, NULL, node->sym);
+                }
+                else
+                {
+                    // Inicialización Dinámica o Local
+
+                    // Si es una variable global dinámica (ej. g = a+b),
+                    //    primero debemos declararla en .data con 0.
+                    if (is_global)
+                    {
+                        // 'collect_globals' lo pondrá en .data como '.quad 0'
+                        ir_emit(list, IR_DECL, NULL, NULL, node->sym);
+                    }
+
+                    // Generar el código para la expresión
+                    Symbol *rhs = gen_code(node->right, list);
+
+                    // Emitir un IR_STORE para asignar el valor.
+                    ir_emit(list, IR_STORE, rhs, NULL, node->sym);
+                }
             }
             break;
         }
