@@ -329,7 +329,6 @@ SymbolType check_types(Tree *node){
         case NODE_METHOD: {
                 // push tipo del método en la pila
                 SymbolType t = node->sym->type;
-                if (strcmp(node->sym->name, "main") == 0) {main_decl = 1;} // Exactamente debe encontrar "main"
                 pushType(&typeStack, t);
                 check_types(node->right); // cuerpo del método
                 popType(&typeStack);
@@ -531,6 +530,8 @@ void check_scopes(Tree *node) {
                     sym = insertSymbol(current, node->sym->name, node->sym->type, node->sym->valor);
                 }
 
+            if (strcmp(node->sym->name, "main") == 0) {main_decl = 1;} // Exactamente debe encontrar "main"
+
             if (sym) {
                 sym->node = node;
                 node->sym = sym;  // opcional, por si querés que apunten al mismo
@@ -562,6 +563,13 @@ void check_scopes(Tree *node) {
                             node->sym->name);
                             semantic_error = 1;
                         }
+                    }
+                    // Scope global y se quiere declarar despues de la funcion main
+                    if(scope_Stack.top == 0 && main_decl == 1) {
+                        yyerrorf(node->lineno,
+                                "La variable global '%s' no puede ser declarada/inicializada despues de main ",
+                                node->sym->name);
+                        semantic_error = 1;
                     }
                 }
             }
