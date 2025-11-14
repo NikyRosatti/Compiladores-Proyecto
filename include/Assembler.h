@@ -47,11 +47,11 @@ void generateCall(IRCode *inst);
 void generateCompare(IRCode *inst, const char *set_op);
 void generateLogicalOp(IRCode *inst, const char *op);
 void generateEnter(IRCode *inst);
-void generateInstruction(IRCode *inst);
+void generateInstruction(IRCode *inst, Symbol *current_method);
 void generateBinaryOp(IRCode *inst, const char *op);
 void generateAssign(IRCode *inst);
 void generateLabel(IRCode *inst);
 void generateGoto(IRCode *inst);
-void generateReturn(IRCode *inst);
+void generateReturn(IRCode *inst, Symbol *current_method);
 
 #endif // ASSEMBLER_H
