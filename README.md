@@ -71,13 +71,13 @@ Pueden usarse sus formas largas como --target, --debug, --opt.
 Si no se especifica ninguna bandera, se ejecuta en modo **scan**:
 
 ```bash
-./bin/c-tds archivo.ctds
+./c-tds archivo.ctds
 ```
 
 Equivalente a:
 
 ```bash
-./bin/c-tds --target scan archivo.ctds
+./c-tds --target scan archivo.ctds
 ```
 
 ---
@@ -86,20 +86,20 @@ Equivalente a:
 El compilador permite elegir la etapa de análisis a ejecutar:
 
 ```bash
-./bin/c-tds --target <etapa> archivo.ctds
+./c-tds --target <etapa> archivo.ctds
 ```
 
 Donde `<etapa>` puede ser:
 
 - `scan` → Ejecuta el analizador léxico (tokens).
 - `parse` → Ejecuta el análisis sintáctico.
-- `codinter` → Genera código intermedio.
-- `assembly` → Genera código ensamblador.
+- `codinter` → Genera código intermedio (simulado).
+- `assembly` → Genera código ensamblador (simulado).
 
 Ejemplo con debug:
 
 ```bash
-./bin/c-tds -d --target assembly tests/correct/TestCorrect1.ctds > salida.s
+./c-tds -d --target scan tests/correct/TestCorrect1.ctds
 ```
 
 ---
@@ -130,6 +130,36 @@ make run_tests TEST_TARGET=parse
 
 ---
 
+### 4\. Compilación y Enlace con Funciones Externas (Runtime)
+
+El compilador `c-tds` sabe cómo manejar las llamadas a funciones externas (como `print_int` o `get_int`), generando las instrucciones `call` correctas en el ensamblador. Sin embargo, no proporciona la *definición* de estas funciones.
+
+Para crear un ejecutable completo, necesitas enlazar (linkear) el código assembly generado con un archivo "runtime" que sí las defina (por ejemplo, un `runtime.c`).
+
+El proceso es el siguiente:
+
+**1. Generar el código Assembly:**
+Usa el target `assembly` y redirige la salida a un archivo `.s`.
+
+```bash
+./c-tds -t assembly tests/correct/mi_programa.ctds > mi_programa.s
+```
+
+**2. Compilar y Enlazar con el Runtime:**
+Usa `gcc` para compilar el archivo `.s` generado y enlazarlo con tu archivo `runtime.c` (o cualquier archivo que contenga las definiciones).
+
+```bash
+# Asumiendo que tienes un archivo runtime.c que define print_int, get_int, etc.
+gcc -o mi_ejecutable mi_programa.s runtime.c
+```
+
+**3. Ejecutar el programa final:**
+Ahora puedes ejecutar el binario compilado.
+
+```bash
+./mi_ejecutable
+```
+
 ## 📂 Resultados
 Los resultados de la ejecución de los tests se guardan en:
 
@@ -156,7 +186,7 @@ Cada archivo de prueba genera su salida correspondiente (archivo `.out`) en la c
 Ejemplo:
 
 ```bash
-./bin/c-tds --target hola tests/correct/TestCorrect1.ctds
+./c-tds --target hola tests/correct/TestCorrect1.ctds
 # Salida:
 # Target desconocido: hola
 # Código de salida = 1
